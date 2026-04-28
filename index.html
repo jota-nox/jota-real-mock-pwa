@@ -194,8 +194,8 @@
   }
   .script li {
     counter-increment: step;
-    display: grid;
-    grid-template-columns: 22px 1fr;
+    display: flex;
+    align-items: baseline;
     gap: 10px;
     padding: 5px 0;
     font-size: 13.5px;
@@ -204,12 +204,14 @@
   }
   .script li::before {
     content: counter(step);
+    flex-shrink: 0;
+    width: 18px;
     color: var(--ink-mute);
     font-variant-numeric: tabular-nums;
     font-weight: 600;
     font-size: 12px;
-    padding-top: 1px;
   }
+  .script li > div { flex: 1; min-width: 0; }
   .script kbd {
     display: inline-block;
     background: #fff;
@@ -271,7 +273,7 @@
     </p>
 
     <div class="roteiro-links">
-      <a class="primary" href="roteiro1.html">Abrir protótipo</a>
+      <a class="primary" href="roteiro1.html?keyboard=open">Abrir protótipo</a>
       <a href="roteiro1.html?autoplay=all&hidedev=1">Roteiro completo (autoplay)</a>
     </div>
 
@@ -301,11 +303,11 @@
     <div class="script">
       <div class="script-title">Como apresentar ao vivo</div>
       <ol>
-        <li>Abra o protótipo. O teclado já vem aberto e pronto.</li>
-        <li>Conte o contexto da confeiteira. <span class="hint">Quando estiver pronto, segure o microfone do input por <kbd>~2 s</kbd> e solte. O áudio é enviado, o Jota responde com a regra de categorização.</span></li>
-        <li>Clique <kbd>Ato 2</kbd>. A foto da nota fiscal sobe com a caption "Anota esse gasto aí". O Jota confirma <strong>R$ 347 · Insumos</strong>.</li>
-        <li>Segure o microfone novamente por <kbd>~2 s</kbd> e solte. Áudio sobre a Carla é enviado; o Jota confirma <strong>R$ 1.900 · Folha de pagamento</strong>.</li>
-        <li>Clique <kbd>Ato 4</kbd>. Sai a pergunta sobre o mês; o Jota responde com o gráfico de categorias.</li>
+        <li><div>Abra o protótipo. O teclado já vem aberto e pronto.</div></li>
+        <li><div>Conte o contexto da confeiteira. <span class="hint">Quando estiver pronto, segure o microfone do input por <kbd>~2 s</kbd> e solte. O áudio é enviado, o Jota responde com a regra de categorização.</span></div></li>
+        <li><div>Clique <kbd>Ato 2</kbd>. A foto da nota fiscal sobe com a caption "Anota esse gasto aí". O Jota confirma <strong>R$ 347 · Insumos</strong>.</div></li>
+        <li><div>Segure o microfone novamente por <kbd>~2 s</kbd> e solte. Áudio sobre a Carla é enviado; o Jota confirma <strong>R$ 1.900 · Folha de pagamento</strong>.</div></li>
+        <li><div>Clique <kbd>Ato 4</kbd>. Sai a pergunta sobre o mês; o Jota responde com o gráfico de categorias.</div></li>
       </ol>
       <div style="margin-top:12px;font-size:12.5px;color:var(--ink-mute)">
         Dica: <kbd>Play All</kbd> roda o roteiro inteiro sem parar (~30 s). <kbd>k</kbd> abre/fecha teclado. <kbd>h</kbd> esconde os botões para gravação limpa.

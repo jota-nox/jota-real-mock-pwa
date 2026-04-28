@@ -579,15 +579,20 @@
     setTimeout(() => playTela4(), 26000);
   }
 
-  // ?autoplay=tela1|tela2|tela3|tela4|all — renders the scene(s) without user interaction.
+  // URL params:
+  //   ?autoplay=tela1|tela2|tela3|tela4|all  — runs scene(s) without interaction
+  //   ?keyboard=open                          — opens keyboard on load (no autoplay)
+  //   ?hidedev=1                              — hides dev panel for clean screenshots
   function applyAutoplay() {
-    const p = new URLSearchParams(location.search).get('autoplay');
-    if (!p) return;
-    setTimeout(() => phone.classList.add('keyboard-open'), 100);
+    const params = new URLSearchParams(location.search);
+    const p = params.get('autoplay');
+    if (params.get('keyboard') === 'open' || p) {
+      setTimeout(() => phone.classList.add('keyboard-open'), 100);
+    }
     const map = { tela1: playTela1, tela2: playTela2, tela3: playTela3, tela4: playTela4 };
     if (map[p]) setTimeout(map[p], 300);
     if (p === 'all') setTimeout(playAll, 300);
-    if (new URLSearchParams(location.search).get('hidedev')) controls.classList.add('hidden');
+    if (params.get('hidedev')) controls.classList.add('hidden');
   }
 
   // ────────────────────────────────────────────────────────────
