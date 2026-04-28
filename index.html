@@ -372,18 +372,54 @@
     </div>
   </article>
 
-  <!-- ROTEIRO 3 — pendente -->
-  <article class="roteiro todo">
+  <!-- ROTEIRO 3 — WIP -->
+  <article class="roteiro">
     <div class="roteiro-head">
       <div>
         <span class="roteiro-num">Roteiro 03</span>
         <h2 class="roteiro-title">3 Perspectivas</h2>
       </div>
-      <span class="roteiro-status status-todo">A fazer</span>
+      <span class="roteiro-status status-wip">WIP</span>
     </div>
     <p class="roteiro-meta">
-      <strong>Confeiteira · Entregador · Cliente</strong> · um mesmo pedido visto pelos três · cada um faz uma pergunta diferente.
+      <strong>Confeiteira · Entregador · Cliente</strong> · um mesmo pedido de bolo visto pelos três · cada um faz uma pergunta diferente. O chat é resetado entre atos para encenar três conversas distintas.
     </p>
+
+    <div class="roteiro-links">
+      <a class="primary" href="roteiro3.html?keyboard=open">Abrir protótipo</a>
+      <a href="roteiro3.html?autoplay=all&hidedev=1">Roteiro completo (autoplay)</a>
+    </div>
+
+    <ul class="telas-list">
+      <li class="tela-row">
+        <span class="num">Ato 1</span>
+        <span class="desc">Confeiteira pede faturamento da semana <em>· chart 7 dias · R$ 4.340</em></span>
+        <a href="roteiro3.html?autoplay=tela1&hidedev=1">autoplay</a>
+      </li>
+      <li class="tela-row">
+        <span class="num">Ato 2</span>
+        <span class="desc">Entregador pergunta total do dia <em>· 11 PIX · R$ 139</em></span>
+        <a href="roteiro3.html?autoplay=tela2&hidedev=1">autoplay</a>
+      </li>
+      <li class="tela-row">
+        <span class="num">Ato 3</span>
+        <span class="desc">Cliente pergunta delivery do mês <em>· R$ 537 (UAU 😅)</em></span>
+        <a href="roteiro3.html?autoplay=tela3&hidedev=1">autoplay</a>
+      </li>
+    </ul>
+
+    <div class="script">
+      <div class="script-title">Como apresentar ao vivo</div>
+      <ol>
+        <li><div>Abra o protótipo. Cada Ato roda numa conversa nova.</div></li>
+        <li><div>Clique <kbd>Ato 1</kbd> e conte que é a <strong>confeiteira</strong> embalando o último pedido. Ela pergunta o faturamento da semana e o Jota responde com gráfico de barras: <strong>R$ 4.340</strong>, com sábado liderando.</div></li>
+        <li><div>Clique <kbd>Ato 2</kbd>. Agora é o <strong>entregador</strong> que acabou de pegar a sacola. <span class="hint">O chat reseta — é outra conversa.</span> Ele pergunta o que entrou no dia: <strong>11 PIX · R$ 139</strong>.</div></li>
+        <li><div>Clique <kbd>Ato 3</kbd>. <strong>Cliente</strong> em casa cortando uma fatia do bolo. Pergunta quanto gastou de delivery no mês — o Jota devolve <strong>R$ 537</strong> com o emoji que dá o tom cômico do momento UAU.</div></li>
+      </ol>
+      <div style="margin-top:12px;font-size:12.5px;color:var(--ink-mute)">
+        Dica: <kbd>Play All</kbd> roda os 3 atos em sequência (~20 s). <kbd>k</kbd> abre/fecha teclado. <kbd>h</kbd> esconde os botões.
+      </div>
+    </div>
   </article>
 
   <!-- ROTEIRO 4 — pendente -->
