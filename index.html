@@ -67,7 +67,8 @@
 
   /* ────────────────────────────────────────────────────────────
      Messages container & bubbles — calibrated against WA iOS refs
-     Padding lateral 15px, gap 11px, top-anchored, scroll on overflow.
+     Padding lateral 15px, gap 11px. Top-anchored (mensagens iniciais ficam
+     no topo); quando o feed enche, auto-scroll mantém a última visível.
      ──────────────────────────────────────────────────────────── */
   .messages {
     position: absolute;
@@ -80,10 +81,12 @@
     flex-direction: column;
     gap: 11px;
     overflow-y: auto;
+    overflow-x: hidden;
     scroll-behavior: smooth;
     transition: bottom 0.25s ease;
   }
   .messages::-webkit-scrollbar { display: none; }
+
   .phone.keyboard-open .messages {
     bottom: calc(var(--keyboard-h, 309px) + 44px);
   }
@@ -283,6 +286,9 @@
     width: 100%;
     display: block;
     border-radius: 6px;
+    aspect-ratio: 1 / 1;        /* reserva espaço enquanto carrega — chart é quadrado */
+    object-fit: cover;
+    background: #f4f2f3;        /* placeholder enquanto img carrega */
   }
   .bubble.image .meta {
     position: absolute;
@@ -578,6 +584,17 @@
     return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
   }
 
+  // Continuously scrolls to bottom for `dur` ms — used to track CSS transitions
+  // (keyboard open/close) so the last bubble stays glued to the input.
+  function scrollToBottomFor(dur = 320) {
+    const start = performance.now();
+    function tick() {
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+      if (performance.now() - start < dur) requestAnimationFrame(tick);
+    }
+    tick();
+  }
+
   function appendBubble(html, classes) {
     const div = document.createElement('div');
     div.className = `bubble ${classes}`;
@@ -586,6 +603,10 @@
     requestAnimationFrame(() => { messagesEl.scrollTop = messagesEl.scrollHeight; });
     return div;
   }
+
+  // Observe phone class changes (keyboard open/close) → keep last bubble visible.
+  new MutationObserver(() => scrollToBottomFor(320))
+    .observe(phone, { attributes: true, attributeFilter: ['class'] });
 
   // SVG check icons (double-tick: gray=delivered, blue=read; single=sent)
   const CHECK_DOUBLE_GRAY = `<svg class="check" viewBox="0 0 16 11" fill="none"><path d="M11.07 0.65L4.37 7.4 1.18 4.21l-.92.91 4.11 4.13 7.62-7.6z" fill="#8696a0"/><path d="M15.07 0.65L8.37 7.4l-.7-.7 6.5-6.55z" fill="#8696a0"/></svg>`;
@@ -679,6 +700,9 @@
       `${kind} image`
     );
     applyLead(b);
+    // Re-scroll once the image has its final dimensions
+    const img = b.querySelector('img');
+    img.addEventListener('load', () => scrollToBottomFor(80));
     return b;
   }
   function datePill(label = 'Hoje') {
@@ -715,14 +739,10 @@
 
   function afterRecRelease() {
     // Hold-mic releases trigger the next un-played audio scene in order (1 then 3).
+    // Each playTelaX is idempotent (sets its own flag), so no need to set here.
     if (lastRecDurationMs < 500) return;
-    if (!sceneState.tela1Played) {
-      sceneState.tela1Played = true;
-      playTela1();
-    } else if (!sceneState.tela3Played) {
-      sceneState.tela3Played = true;
-      playTela3();
-    }
+    if (!sceneState.tela1Played)      playTela1();
+    else if (!sceneState.tela3Played) playTela3();
   }
 
   function resetChat() {
@@ -740,6 +760,8 @@
 
   // Tela 1: regra de categorização por áudio
   function playTela1() {
+    if (sceneState.tela1Played) return;
+    sceneState.tela1Played = true;
     ensureDatePill();
     setTimeout(() => {
       const audio = audioBubble();
