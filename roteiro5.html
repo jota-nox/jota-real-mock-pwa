@@ -126,25 +126,21 @@
   .bubble.text.sent     { background: #d9fdd3; }
   .bubble.text.received { background: #ffffff; }
 
-  /* Tail — bottom-left for received, bottom-right for sent.
-     Only on the LEAD bubble of a sender group (.is-lead). */
-  .bubble .tail-svg {
+  /* Tail — cropped from real WA iOS screenshots (wa-refs/IMG_3649.PNG)
+     with cream BG color-keyed to alpha. Aplicado em TODA bolha (text, photo,
+     image, audio). Posicionado absoluto fora do canto bottom da bolha. */
+  .bubble::after {
+    content: '';
     position: absolute;
     bottom: 0;
-    width: 8px;
-    height: 13px;
-    display: none;
+    width: 7px;
+    height: 11px;
+    background-size: 7px 11px;
+    background-repeat: no-repeat;
+    pointer-events: none;
   }
-  .bubble.is-lead .tail-svg { display: block; }
-  .bubble.received .tail-svg { left: -7px; }
-  .bubble.sent     .tail-svg { right: -7px; }
-  /* Squash bottom corner where tail emerges, so tail flows naturally from bubble */
-  .bubble.received.is-lead.text { border-bottom-left-radius: 0; }
-  .bubble.sent.is-lead.text     { border-bottom-right-radius: 0; }
-  .bubble.received.is-lead.photo, .bubble.received.is-lead.image { border-bottom-left-radius: 0; }
-  .bubble.sent.is-lead.photo,     .bubble.sent.is-lead.image     { border-bottom-right-radius: 0; }
-  .bubble.received.is-lead.photo img, .bubble.received.is-lead.image img { border-bottom-left-radius: 0; }
-  .bubble.sent.is-lead.photo img,     .bubble.sent.is-lead.image img     { border-bottom-right-radius: 0; }
+  .bubble.received::after { left: -6px; background-image: url('tail-received.png'); }
+  .bubble.sent::after     { right: -6px; background-image: url('tail-sent.png'); }
 
   /* Inline rich text */
   .bubble.text strong { font-weight: 600; color: inherit; }
@@ -638,10 +634,6 @@
   const CHECK_DOUBLE_BLUE = `<svg class="check" viewBox="0 0 16 11" fill="none"><path d="M11.07 0.65L4.37 7.4 1.18 4.21l-.92.91 4.11 4.13 7.62-7.6z" fill="#53bdeb"/><path d="M15.07 0.65L8.37 7.4l-.7-.7 6.5-6.55z" fill="#53bdeb"/></svg>`;
   const CHECK_SINGLE_GRAY = `<svg class="check" viewBox="0 0 16 11" fill="none"><path d="M12.07 0.65L5.37 7.4 2.18 4.21l-.92.91 4.11 4.13 7.62-7.6z" fill="#8696a0"/></svg>`;
 
-  // Tail SVGs (bottom corner) — convex iOS-style
-  const TAIL_RECEIVED = `<svg class="tail-svg" viewBox="0 0 18 36" preserveAspectRatio="none"><path d="M18,0 L18,36 L8,36 C3,36 0,32 0,28 C0,16 9,8 18,0 Z" fill="#ffffff"/></svg>`;
-  const TAIL_SENT     = `<svg class="tail-svg" viewBox="0 0 18 36" preserveAspectRatio="none"><path d="M0,0 L0,36 L10,36 C15,36 18,32 18,28 C18,16 9,8 0,0 Z" fill="#d9fdd3"/></svg>`;
-
   // Quote icons (SF Symbol-style)
   const ICON_MIC    = `<svg class="quote-icon" viewBox="0 0 16 16"><path d="M8 1a2.5 2.5 0 0 0-2.5 2.5v5a2.5 2.5 0 0 0 5 0v-5A2.5 2.5 0 0 0 8 1zM4.5 7v1.5a3.5 3.5 0 0 0 7 0V7h1v1.5a4.5 4.5 0 0 1-4 4.475V14.5h2.5v1h-6v-1H7.5v-1.525a4.5 4.5 0 0 1-4-4.475V7h1z"/></svg>`;
   const ICON_CAMERA = `<svg class="quote-icon" viewBox="0 0 16 16"><path d="M5 3l-1 1.5H2A1.5 1.5 0 0 0 0.5 6v6.5A1.5 1.5 0 0 0 2 14h12a1.5 1.5 0 0 0 1.5-1.5V6A1.5 1.5 0 0 0 14 4.5h-2L11 3H5zm3 3.5a3 3 0 1 1 0 6 3 3 0 0 1 0-6z"/></svg>`;
@@ -678,34 +670,18 @@
     return `<span class="meta">${nowHHMM()}${check}</span>`;
   }
 
-  // Apply 'is-lead' to the new bubble if its sender differs from the previous bubble.
-  function applyLead(bubbleEl) {
-    const prev = bubbleEl.previousElementSibling;
-    if (!prev || !prev.classList.contains('bubble')) {
-      bubbleEl.classList.add('is-lead');
-      return;
-    }
-    const prevSender = prev.classList.contains('sent') ? 'sent' : 'received';
-    const thisSender = bubbleEl.classList.contains('sent') ? 'sent' : 'received';
-    if (prevSender !== thisSender) bubbleEl.classList.add('is-lead');
-  }
-
   function audioBubble() {
     const b = appendBubble(`<img src="audio-sending-blank.png" alt="">`, 'sent audio');
-    applyLead(b);
     return b;
   }
   function typingBubble() {
     const b = appendBubble(`<img src="typing.png" alt="">`, 'received typing');
-    applyLead(b);
     return b;
   }
   function textBubble(text, kind = 'received', opts = {}) {
-    const tail = (kind === 'received') ? TAIL_RECEIVED : TAIL_SENT;
     const formatted = formatWAText(text);
     const quote = opts.quote ? renderQuote(opts.quote) : '';
-    const b = appendBubble(`${quote}${formatted}${metaHtml(opts)}${tail}`, `${kind} text`);
-    applyLead(b);
+    const b = appendBubble(`${quote}${formatted}${metaHtml(opts)}`, `${kind} text`);
     return b;
   }
   function photoBubble(src, opts = {}) {
@@ -716,7 +692,6 @@
       `<img src="${src}" alt=""><span class="meta-overlay">${nowHHMM()}${check}</span>`,
       'sent photo'
     );
-    applyLead(b);
     return b;
   }
   function imageBubble(src, kind = 'received', opts = {}) {
@@ -724,7 +699,6 @@
       `<img src="${src}" alt=""><span class="meta">${nowHHMM()}</span>`,
       `${kind} image`
     );
-    applyLead(b);
     // Re-scroll once the image has its final dimensions
     const img = b.querySelector('img');
     img.addEventListener('load', () => scrollToBottomFor(80));
