@@ -116,32 +116,25 @@
 
   /* Text bubble */
   .bubble.text {
-    padding: 6px 9px 6px 9px;
-    border-radius: 9px;
+    padding: 6px 12px 6px 12px;
     font-size: 14.5px;
     line-height: 1.32;
     color: #0c0c0c;
     -webkit-font-smoothing: antialiased;
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
   }
-  .bubble.text.sent     { background: #d9fdd3; }
-  .bubble.text.received { background: #ffffff; }
+  .bubble.text.sent {
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 509 118' preserveAspectRatio='none'><path d='M17.0001 0C7.61122 0 0 7.61116 0 17V101C0 110.389 7.61122 118 17.0001 118H482C486.565 118 490.71 116.2 493.764 113.271C495.381 114.834 499.96 117.5 507.5 117.5C508.167 117.5 508.8 116.8 506 114C503.2 111.2 501.167 106.833 500.5 105C500.167 104 499 100.5 499 95V17C499 7.61116 491.389 0 482 0H17.0001Z' fill='%23D4FCCD'/></svg>");
+  }
+  .bubble.text.received {
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 509 118' preserveAspectRatio='none'><path d='M491.071 0C500.46 0 508.071 7.61116 508.071 17V101C508.071 110.389 500.46 118 491.071 118H26.0713C21.506 118 17.3616 116.2 14.3076 113.271C12.69 114.834 8.11181 117.5 0.571289 117.5C-0.0953776 117.5 -0.728711 116.8 2.07129 114C4.87127 111.2 6.9046 106.833 7.57129 105C7.90462 104 9.07129 100.5 9.07129 95V17C9.07129 7.61116 16.6824 0 26.0713 0H491.071Z' fill='white'/></svg>");
+  }
 
   /* Tail — cropped from real WA iOS screenshots (wa-refs/IMG_3649.PNG)
      with cream BG color-keyed to alpha. Aplicado em TODA bolha (text, photo,
      image, audio). Posicionado absoluto fora do canto bottom da bolha. */
-  .bubble::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    width: 9px;
-    height: 6px;
-    background-size: 9px 6px;
-    background-repeat: no-repeat;
-    pointer-events: none;
-  }
-  .bubble.received::after { left: -8px; background-image: url('tail-received.png'); }
-  .bubble.sent::after     { right: -8px; background-image: url('tail-sent.png'); }
-  .bubble.typing::after   { display: none; }
+  /* Tail integrado no SVG background da bolha (ver .bubble.text.sent/.received). */
 
   /* Inline rich text */
   .bubble.text strong { font-weight: 600; color: inherit; }
