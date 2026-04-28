@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<title>Chart Test — Distribuição de gastos</title>
+<title>Chart — Distribuição de gastos</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
@@ -35,70 +35,99 @@
     flex-shrink: 0;
   }
   .header .title {
-    font-size: 24px;
+    font-size: 28px;
     font-weight: 700;
-    color: #1a1a1a;
-    letter-spacing: -0.3px;
-    line-height: 1.1;
+    color: #0c0c0c;
+    letter-spacing: -0.4px;
+    line-height: 1.05;
+  }
+  .header .title sup {
+    font-size: 14px;
+    font-weight: 600;
+    vertical-align: super;
+    margin-left: 2px;
+    color: #0c0c0c;
   }
   .header .subtitle {
-    font-size: 18px;
-    font-weight: 400;
-    color: #9a9a9a;
+    font-size: 22px;
+    font-weight: 500;
+    color: #b8b3a8;
     margin-top: 2px;
+    letter-spacing: -0.2px;
   }
   .smile {
-    width: 36px;
-    height: 36px;
+    width: 32px;
+    height: 16px;
+    margin-top: 4px;
     flex-shrink: 0;
+  }
+  .smile path {
+    stroke: #0c0c0c;
+    stroke-width: 2.5;
+    stroke-linecap: round;
+    fill: none;
   }
 
   .chart-area {
     flex: 1;
     display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: 32px;
-    padding: 12px 0;
+    justify-content: space-between;
+    padding-top: 0;
+    padding-bottom: 4px;
   }
 
   .donut {
-    width: 260px;
-    height: 260px;
+    width: 352px;
+    height: 352px;
     flex-shrink: 0;
   }
 
   .legend {
-    flex: 1;
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    height: 52px;
+  }
+  .legend-item {
     display: flex;
     flex-direction: column;
-    gap: 12px;
-    font-size: 13px;
+    gap: 4px;
   }
-  .legend-row {
-    display: grid;
-    grid-template-columns: 14px 1fr auto auto;
-    gap: 10px;
+  .legend-row1 {
+    display: flex;
     align-items: center;
-    color: #1a1a1a;
+    gap: 6px;
   }
   .legend-swatch {
-    width: 10px;
-    height: 10px;
-    border-radius: 2px;
+    width: 12px;
+    height: 12px;
+    border-radius: 1px;
+    flex-shrink: 0;
   }
   .legend-label {
-    font-weight: 400;
+    font-size: 13px;
+    font-weight: 500;
+    color: #0c0c0c;
+  }
+  .legend-row2 {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    padding-left: 18px;
   }
   .legend-value {
-    color: #1a1a1a;
+    font-size: 13px;
+    color: #0c0c0c;
     font-variant-numeric: tabular-nums;
     font-weight: 500;
   }
   .legend-pct {
-    color: #9a9a9a;
+    font-size: 12px;
+    color: #b8b3a8;
     font-variant-numeric: tabular-nums;
-    width: 32px;
-    text-align: right;
   }
 
   .footer {
@@ -107,8 +136,8 @@
     justify-content: flex-end;
     align-items: center;
     color: #c4bfb6;
-    font-size: 11px;
-    font-weight: 400;
+    font-size: 12px;
+    font-weight: 500;
     flex-shrink: 0;
   }
 </style>
@@ -118,88 +147,74 @@
 <div class="card">
   <div class="header">
     <div>
-      <div class="title">Distribuição de gastos</div>
+      <div class="title">Distribuição de gastos<sup>(R$)</sup></div>
       <div class="subtitle">Abril 2026</div>
     </div>
-    <svg class="smile" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M24.8163 31.587C28.3928 31.2265 31.2143 28.4027 31.5745 24.8234C31.8011 22.5695 31.9822 19.6749 32 15.9999C31.9817 12.325 31.8011 9.43035 31.574 7.17646C31.2139 3.59707 28.3923 0.773274 24.8158 0.41281C19.2391 -0.149178 12.5294 -0.125906 7.18318 0.41281C3.60767 0.773274 0.785653 3.59707 0.425479 7.17646C0.198887 9.43035 0.0183055 12.325 0 15.9999C0.0183055 19.6749 0.198887 22.5695 0.425479 24.8234C0.785653 28.4027 3.60717 31.2265 7.18367 31.587C12.7599 32.1495 19.4706 32.1257 24.8163 31.587Z" fill="#FFE84C"/>
-      <path d="M25.7308 14.1802C25.6413 14.3312 25.602 14.5798 25.5539 14.7323C25.3848 15.2689 25.2333 15.8106 25.0647 16.3477C24.698 17.516 24.1633 18.6362 23.4775 19.6509C21.7988 22.1343 19.1954 23.7776 16.1685 23.9327C15.9921 23.9415 15.8158 23.9461 15.6394 23.9461C14.3155 23.9461 12.9962 23.6716 11.8031 23.0927C8.50099 21.4902 6.60352 17.9228 7.07621 16.8517C7.20136 16.5679 7.51942 16.3839 7.8292 16.402C8.68614 16.4527 9.04712 17.5294 9.44275 18.1311C9.92112 18.8585 10.4755 19.5325 11.1851 20.0464C12.3058 20.858 13.6607 21.2415 15.0379 21.2415C17.21 21.2415 19.1504 20.2697 20.4511 18.5354C21.3804 17.2958 21.9695 15.807 22.2994 14.3007C22.3584 14.0308 22.5627 13.5744 22.2658 13.3821C21.8604 13.1189 21.308 13.4219 20.856 13.3231C20.4878 13.2425 20.1367 12.9561 20.1077 12.5808C20.0886 12.3296 20.2168 12.084 20.3983 11.9093C20.8255 11.4999 21.4771 11.395 22.0414 11.3273C23.0116 11.2104 24.0133 11.1867 24.9706 11.4115C25.8622 11.6209 26.7957 12.097 27.3707 12.8289C27.5492 13.0559 27.6981 13.3216 27.7095 13.61C27.7209 13.8985 27.5616 14.2076 27.287 14.2965C27.0315 14.3792 26.7595 14.2603 26.5117 14.157C26.31 14.0727 25.9377 13.9223 25.766 14.1301C25.7536 14.1451 25.7422 14.1621 25.7313 14.1802H25.7308Z" fill="black"/>
-      <path d="M4.93481 13.4367C4.9022 14.1789 5.75371 14.2804 6.49912 14.045C7.42 13.7539 8.40248 13.6601 9.36063 13.7757C9.75041 13.8231 10.1645 13.9007 10.5222 13.7382C11.5523 13.27 10.8607 12.3601 10.281 11.9069C9.57234 11.3533 8.64784 11.0699 7.75284 11.1637C6.74551 11.2694 5.42501 11.9731 5.03834 12.9851C4.97311 13.1564 4.93998 13.3059 4.93429 13.4361L4.93481 13.4367Z" fill="black"/>
+    <svg class="smile" viewBox="0 0 32 16">
+      <path d="M 4 2 Q 16 17 28 2"/>
     </svg>
   </div>
 
   <div class="chart-area">
     <svg class="donut" viewBox="0 0 100 100">
-      <!-- Donut segments. Using stroke-dasharray on circles. Circumference = 2π × 35 ≈ 219.91 -->
-      <!-- Total: 11205. Insumos 4180 (37.3%), Folha 3250 (29.0%), Aluguel 1800 (16.1%),
-           Energia 920 (8.2%), Transporte 540 (4.8%), Alimentação 285 (2.5%), Outros 230 (2.1%) -->
+      <!-- Total: 11205. 4 categorias consolidadas:
+           Insumos 4180 (37.3%) · yellow
+           Folha 3250 (29.0%) · coral
+           Outros 1975 (17.6%) · orange (engloba energia + transporte + alimentação + outros)
+           Aluguel 1800 (16.1%) · lavender
+           Stroke circumference = 2π × 35 ≈ 219.91 -->
       <g transform="rotate(-90 50 50)">
-        <!-- Insumos: 37.3% -->
         <circle cx="50" cy="50" r="35" fill="none" stroke="#F9DA4A" stroke-width="20"
                 stroke-dasharray="82.03 137.88" stroke-dashoffset="0"/>
-        <!-- Folha: 29.0% -->
-        <circle cx="50" cy="50" r="35" fill="none" stroke="#F96B5C" stroke-width="20"
+        <circle cx="50" cy="50" r="35" fill="none" stroke="#F36F62" stroke-width="20"
                 stroke-dasharray="63.78 156.13" stroke-dashoffset="-82.03"/>
-        <!-- Aluguel: 16.1% -->
-        <circle cx="50" cy="50" r="35" fill="none" stroke="#B5A2F8" stroke-width="20"
-                stroke-dasharray="35.40 184.51" stroke-dashoffset="-145.81"/>
-        <!-- Energia: 8.2% -->
         <circle cx="50" cy="50" r="35" fill="none" stroke="#F4A14D" stroke-width="20"
-                stroke-dasharray="18.04 201.87" stroke-dashoffset="-181.21"/>
-        <!-- Transporte: 4.8% -->
-        <circle cx="50" cy="50" r="35" fill="none" stroke="#85B6E5" stroke-width="20"
-                stroke-dasharray="10.56 209.35" stroke-dashoffset="-199.25"/>
-        <!-- Alimentação: 2.5% -->
-        <circle cx="50" cy="50" r="35" fill="none" stroke="#88E0B5" stroke-width="20"
-                stroke-dasharray="5.59 214.32" stroke-dashoffset="-209.81"/>
-        <!-- Outros: 2.1% -->
-        <circle cx="50" cy="50" r="35" fill="none" stroke="#E2DDD0" stroke-width="20"
-                stroke-dasharray="4.51 215.40" stroke-dashoffset="-215.40"/>
+                stroke-dasharray="38.71 181.20" stroke-dashoffset="-145.81"/>
+        <circle cx="50" cy="50" r="35" fill="none" stroke="#B5A2F8" stroke-width="20"
+                stroke-dasharray="35.40 184.51" stroke-dashoffset="-184.52"/>
       </g>
     </svg>
 
     <div class="legend">
-      <div class="legend-row">
-        <span class="legend-swatch" style="background:#F9DA4A"></span>
-        <span class="legend-label">Insumos</span>
-        <span class="legend-value">R$ 4.180</span>
-        <span class="legend-pct">37%</span>
+      <div class="legend-item">
+        <div class="legend-row1">
+          <span class="legend-swatch" style="background:#F9DA4A"></span>
+          <span class="legend-label">Insumos</span>
+        </div>
+        <div class="legend-row2">
+          <span class="legend-value">R$ 4.180</span>
+          <span class="legend-pct">37%</span>
+        </div>
       </div>
-      <div class="legend-row">
-        <span class="legend-swatch" style="background:#F96B5C"></span>
-        <span class="legend-label">Folha de pagamento</span>
-        <span class="legend-value">R$ 3.250</span>
-        <span class="legend-pct">29%</span>
+      <div class="legend-item">
+        <div class="legend-row1">
+          <span class="legend-swatch" style="background:#F36F62"></span>
+          <span class="legend-label">Folha</span>
+        </div>
+        <div class="legend-row2">
+          <span class="legend-value">R$ 3.250</span>
+          <span class="legend-pct">29%</span>
+        </div>
       </div>
-      <div class="legend-row">
-        <span class="legend-swatch" style="background:#B5A2F8"></span>
-        <span class="legend-label">Aluguel</span>
-        <span class="legend-value">R$ 1.800</span>
-        <span class="legend-pct">16%</span>
+      <div class="legend-item">
+        <div class="legend-row1">
+          <span class="legend-swatch" style="background:#F4A14D"></span>
+          <span class="legend-label">Outros</span>
+        </div>
+        <div class="legend-row2">
+          <span class="legend-value">R$ 1.975</span>
+          <span class="legend-pct">18%</span>
+        </div>
       </div>
-      <div class="legend-row">
-        <span class="legend-swatch" style="background:#F4A14D"></span>
-        <span class="legend-label">Energia</span>
-        <span class="legend-value">R$ 920</span>
-        <span class="legend-pct">8%</span>
-      </div>
-      <div class="legend-row">
-        <span class="legend-swatch" style="background:#85B6E5"></span>
-        <span class="legend-label">Transporte</span>
-        <span class="legend-value">R$ 540</span>
-        <span class="legend-pct">5%</span>
-      </div>
-      <div class="legend-row">
-        <span class="legend-swatch" style="background:#88E0B5"></span>
-        <span class="legend-label">Alimentação</span>
-        <span class="legend-value">R$ 285</span>
-        <span class="legend-pct">3%</span>
-      </div>
-      <div class="legend-row">
-        <span class="legend-swatch" style="background:#E2DDD0"></span>
-        <span class="legend-label">Outros</span>
-        <span class="legend-value">R$ 230</span>
-        <span class="legend-pct">2%</span>
+      <div class="legend-item">
+        <div class="legend-row1">
+          <span class="legend-swatch" style="background:#B5A2F8"></span>
+          <span class="legend-label">Aluguel</span>
+        </div>
+        <div class="legend-row2">
+          <span class="legend-value">R$ 1.800</span>
+          <span class="legend-pct">16%</span>
+        </div>
       </div>
     </div>
   </div>

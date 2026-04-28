@@ -293,13 +293,13 @@
   }
   .bubble.image .meta {
     position: absolute;
-    bottom: 6px;
-    right: 9px;
-    background: rgba(255, 255, 255, 0.7);
-    padding: 1px 5px;
-    border-radius: 4px;
+    bottom: 8px;
+    right: 12px;
+    background: transparent;
+    padding: 0;
     transform: none;
     margin: 0;
+    color: #b8b3a8;
   }
 
   .header {
@@ -697,8 +697,9 @@
     return b;
   }
   function imageBubble(src, kind = 'received', opts = {}) {
+    // Charts já têm footer (www.jota.ai); não adiciona timestamp meta na bolha image.
     const b = appendBubble(
-      `<img src="${src}" alt=""><span class="meta">${nowHHMM()}</span>`,
+      `<img src="${src}" alt="">`,
       `${kind} image`
     );
     // Re-scroll once the image has its final dimensions
