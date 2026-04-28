@@ -435,12 +435,11 @@
 <body>
 
 <div class="controls" id="controls">
-  <button onclick="toggleKeyboard()">Teclado</button>
-  <button onclick="playTela2()">Tela 2</button>
-  <button onclick="playTela3()">Tela 3</button>
-  <button onclick="playTela4()">Tela 4</button>
-  <button onclick="playAll()">Roteiro</button>
-  <button onclick="resetChat()">Reset</button>
+  <button onclick="ato(1)">Ato 1</button>
+  <button onclick="ato(2)">Ato 2</button>
+  <button onclick="ato(3)">Ato 3</button>
+  <button onclick="ato(4)">Ato 4</button>
+  <button onclick="playAll()">Play All</button>
   <button onclick="toggleControls()">Esconder</button>
 </div>
 
@@ -563,9 +562,17 @@
   window.addEventListener('touchend', micUp);
   window.addEventListener('touchcancel', () => { micPressed = false; stopRec(); });
 
+  // Single-Ato trigger via dev panel: ensures keyboard is open then plays the scene.
+  function ato(n) {
+    if (!phone.classList.contains('keyboard-open')) phone.classList.add('keyboard-open');
+    const fn = { 1: playTela1, 2: playTela2, 3: playTela3, 4: playTela4 }[n];
+    if (fn) fn();
+  }
+
   // Plays Roteiro 1 end-to-end with realistic pauses between scenes.
   function playAll() {
     resetChat();
+    if (!phone.classList.contains('keyboard-open')) phone.classList.add('keyboard-open');
     setTimeout(() => playTela1(),  300);
     setTimeout(() => playTela2(),  9000);
     setTimeout(() => playTela3(), 18000);

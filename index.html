@@ -171,6 +171,63 @@
   }
   .tela-row a:hover { background: #e6dfd2; }
 
+  /* Script de execução */
+  .script {
+    margin-top: 18px;
+    padding: 16px 18px 14px;
+    background: var(--cream);
+    border-radius: 10px;
+  }
+  .script-title {
+    font-size: 11.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.7px;
+    font-weight: 700;
+    color: var(--ink-soft);
+    margin-bottom: 10px;
+  }
+  .script ol {
+    list-style: none;
+    counter-reset: step;
+    padding: 0;
+    margin: 0;
+  }
+  .script li {
+    counter-increment: step;
+    display: grid;
+    grid-template-columns: 22px 1fr;
+    gap: 10px;
+    padding: 5px 0;
+    font-size: 13.5px;
+    color: var(--ink);
+    line-height: 1.45;
+  }
+  .script li::before {
+    content: counter(step);
+    color: var(--ink-mute);
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    font-size: 12px;
+    padding-top: 1px;
+  }
+  .script kbd {
+    display: inline-block;
+    background: #fff;
+    border: 1px solid rgba(0,0,0,0.12);
+    border-bottom-width: 2px;
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-family: inherit;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--ink);
+    line-height: 1.3;
+  }
+  .script .hint {
+    color: var(--ink-mute);
+    font-size: 12.5px;
+  }
+
   /* Footer */
   footer {
     margin-top: 60px;
@@ -240,6 +297,20 @@
         <a href="roteiro1.html?autoplay=tela4&hidedev=1">autoplay</a>
       </li>
     </ul>
+
+    <div class="script">
+      <div class="script-title">Como apresentar ao vivo</div>
+      <ol>
+        <li>Abra o protótipo. O teclado já vem aberto e pronto.</li>
+        <li>Conte o contexto da confeiteira. <span class="hint">Quando estiver pronto, segure o microfone do input por <kbd>~2 s</kbd> e solte. O áudio é enviado, o Jota responde com a regra de categorização.</span></li>
+        <li>Clique <kbd>Ato 2</kbd>. A foto da nota fiscal sobe com a caption "Anota esse gasto aí". O Jota confirma <strong>R$ 347 · Insumos</strong>.</li>
+        <li>Segure o microfone novamente por <kbd>~2 s</kbd> e solte. Áudio sobre a Carla é enviado; o Jota confirma <strong>R$ 1.900 · Folha de pagamento</strong>.</li>
+        <li>Clique <kbd>Ato 4</kbd>. Sai a pergunta sobre o mês; o Jota responde com o gráfico de categorias.</li>
+      </ol>
+      <div style="margin-top:12px;font-size:12.5px;color:var(--ink-mute)">
+        Dica: <kbd>Play All</kbd> roda o roteiro inteiro sem parar (~30 s). <kbd>k</kbd> abre/fecha teclado. <kbd>h</kbd> esconde os botões para gravação limpa.
+      </div>
+    </div>
   </article>
 
   <!-- ROTEIRO 2 — pendente -->
