@@ -2,867 +2,307 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Jota — WhatsApp Canvas</title>
-
-<!--
-  Canvas base do protótipo Jota no WhatsApp.
-  Layers (bottom to top):
-    .chat        — doodle wallpaper (z 0)
-    .input       — input bar; slides up partially when keyboard opens (z 8)
-    .keyboard    — iOS keyboard; slides up from bottom on toggle (z 9)
-    .header      — status bar + chat header (z 10)
-    .mic-target  — invisible hit area on input mic icon (z 11)
-    .rec-overlay — recording UI (rec bar + lock pill + live timer); shown on press (z 12)
-  Controls: 'k' toggles keyboard, 'h' hides dev controls.
-  Recording: hold mouse on input mic icon (only when keyboard open). Release to reset.
--->
-
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jota — Protótipos dos roteiros</title>
 <style>
-  :root {
-    --phone-w: 393px;
-    --phone-h: 852px;
-    --phone-radius: 55px;
-    --bg-cream: #efeae2;
-  }
-
   * { box-sizing: border-box; margin: 0; padding: 0; }
-
+  :root {
+    --cream: #f2eee9;
+    --ink: #0c0c0c;
+    --ink-soft: #54656f;
+    --ink-mute: #9a9a9a;
+    --accent: #FFE84C;
+    --line: rgba(0, 0, 0, 0.08);
+    --card-shadow: 0 1px 0 rgba(0, 0, 0, 0.04), 0 4px 16px rgba(0, 0, 0, 0.05);
+  }
   html, body {
-    height: 100%;
-    background: #1a1a1a;
-    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
-    overflow: hidden;
+    background: var(--cream);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.4;
   }
 
-  body {
+  .page {
+    max-width: 880px;
+    margin: 0 auto;
+    padding: 56px 24px 80px;
+  }
+
+  header.hero {
     display: flex;
     align-items: center;
-    justify-content: center;
-    padding: 24px;
+    gap: 16px;
+    margin-bottom: 8px;
+  }
+  .smile {
+    width: 44px;
+    height: 44px;
+    flex-shrink: 0;
+  }
+  .smile circle { fill: var(--accent); }
+  .smile path { stroke: var(--ink); stroke-width: 2; stroke-linecap: round; fill: none; }
+
+  h1 {
+    font-size: 32px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    line-height: 1.1;
+  }
+  .sub {
+    color: var(--ink-soft);
+    font-size: 15px;
+    margin: 4px 0 40px 60px;
   }
 
-  .phone {
-    width: var(--phone-w);
-    height: var(--phone-h);
-    border-radius: var(--phone-radius);
-    background: var(--bg-cream);
-    position: relative;
-    overflow: hidden;
-    box-shadow:
-      0 0 0 2px #2a2a2a,
-      0 0 0 8px #0a0a0a,
-      0 30px 80px rgba(0, 0, 0, 0.6),
-      0 10px 30px rgba(0, 0, 0, 0.4);
+  /* Roteiro card */
+  .roteiro {
+    background: #fff;
+    border-radius: 14px;
+    padding: 24px 24px 20px;
+    margin-bottom: 20px;
+    box-shadow: var(--card-shadow);
   }
-
-  .chat {
-    position: absolute;
-    inset: 0;
-    background-image: url('bgDoodle.png');
-    background-repeat: repeat;
-    background-size: 660px auto; /* 50% of natural 1320×1911 */
-    background-color: var(--bg-cream);
+  .roteiro.todo {
+    background: transparent;
+    border: 1px dashed rgba(0, 0, 0, 0.15);
+    box-shadow: none;
   }
-
-  /* ────────────────────────────────────────────────────────────
-     Messages container & bubbles — calibrated against WA iOS refs
-     Padding lateral 15px, gap 11px. Top-anchored (mensagens iniciais ficam
-     no topo); quando o feed enche, auto-scroll mantém a última visível.
-     ──────────────────────────────────────────────────────────── */
-  .messages {
-    position: absolute;
-    top: 90px;
-    bottom: 73px;
-    left: 0;
-    right: 0;
-    padding: 11px 15px;
+  .roteiro-head {
     display: flex;
-    flex-direction: column;
-    gap: 11px;
-    overflow-y: auto;
-    overflow-x: hidden;
-    scroll-behavior: smooth;
-    transition: bottom 0.25s ease;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 4px;
   }
-  .messages::-webkit-scrollbar { display: none; }
-
-  .phone.keyboard-open .messages {
-    bottom: calc(var(--keyboard-h, 309px) + 44px);
+  .roteiro-title {
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: -0.2px;
   }
+  .roteiro-num {
+    color: var(--ink-mute);
+    font-variant-numeric: tabular-nums;
+    font-size: 13px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .roteiro-status {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-weight: 600;
+  }
+  .status-done { background: #d4fccd; color: #0c5b1f; }
+  .status-todo { background: rgba(0,0,0,0.05); color: var(--ink-mute); }
 
-  /* Date pill ("Hoje", etc.) */
-  .date-pill {
-    align-self: center;
-    background: rgba(255, 255, 255, 0.92);
-    color: #54656f;
+  .roteiro-meta {
+    color: var(--ink-soft);
+    font-size: 13.5px;
+    margin-bottom: 16px;
+  }
+  .roteiro-meta strong { color: var(--ink); font-weight: 600; }
+
+  .roteiro-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 14px;
+  }
+  .roteiro-links a {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 12px;
+    background: var(--cream);
+    border-radius: 6px;
+    color: var(--ink);
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 500;
+    transition: background 0.12s;
+  }
+  .roteiro-links a:hover { background: #e6dfd2; }
+  .roteiro-links a.primary {
+    background: var(--ink);
+    color: var(--cream);
+  }
+  .roteiro-links a.primary:hover { background: #2a2a2a; }
+  .roteiro-links a .lbl-key {
+    font-size: 10.5px;
+    color: var(--ink-mute);
+    font-variant-numeric: tabular-nums;
+  }
+  .roteiro-links a.primary .lbl-key { color: rgba(255,255,255,0.5); }
+
+  .telas-list {
+    margin-top: 12px;
+    padding-left: 0;
+    list-style: none;
+    border-top: 1px solid var(--line);
+    padding-top: 14px;
+  }
+  .tela-row {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 12px;
+    align-items: baseline;
+    padding: 6px 0;
+    font-size: 13.5px;
+  }
+  .tela-row .num {
+    color: var(--ink-mute);
+    font-variant-numeric: tabular-nums;
+    font-size: 12px;
+    width: 36px;
+  }
+  .tela-row .desc { color: var(--ink); }
+  .tela-row .desc em { font-style: normal; color: var(--ink-mute); }
+  .tela-row a {
+    color: var(--ink);
+    text-decoration: none;
+    background: var(--cream);
+    padding: 3px 8px;
+    border-radius: 4px;
     font-size: 12px;
     font-weight: 500;
-    padding: 4px 12px;
-    border-radius: 8px;
-    box-shadow: 0 1px 0.5px rgba(0, 0, 0, 0.06);
   }
+  .tela-row a:hover { background: #e6dfd2; }
 
-  /* Bubble base */
-  .bubble {
-    max-width: 78%;
-    word-wrap: break-word;
-    animation: bubble-in 0.18s ease-out;
-    position: relative;
-    filter: drop-shadow(0 1px 0.5px rgba(0, 0, 0, 0.13));
-  }
-  @keyframes bubble-in {
-    from { opacity: 0; transform: translateY(4px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-  .bubble.sent     { align-self: flex-end; }
-  .bubble.received { align-self: flex-start; }
-
-  /* Text bubble */
-  .bubble.text {
-    padding: 6px 9px 6px 9px;
-    border-radius: 9px;
-    font-size: 14.5px;
-    line-height: 1.32;
-    color: #0c0c0c;
-    -webkit-font-smoothing: antialiased;
-  }
-  .bubble.text.sent     { background: #d9fdd3; }
-  .bubble.text.received { background: #ffffff; }
-
-  /* Tail — bottom-left for received, bottom-right for sent.
-     Only on the LEAD bubble of a sender group (.is-lead). */
-  .bubble .tail-svg {
-    position: absolute;
-    bottom: 0;
-    width: 8px;
-    height: 13px;
-    display: none;
-  }
-  .bubble.is-lead .tail-svg { display: block; }
-  .bubble.received .tail-svg { left: -7px; }
-  .bubble.sent     .tail-svg { right: -7px; }
-
-  /* Inline rich text */
-  .bubble.text strong { font-weight: 600; color: inherit; }
-  .bubble.text em     { font-style: italic; color: inherit; }
-  .bubble.text s      { text-decoration: line-through; color: inherit; }
-  .bubble.text code   {
-    font-family: ui-monospace, "SF Mono", Menlo, monospace;
-    font-size: 0.94em;
-    background: rgba(0, 0, 0, 0.05);
-    padding: 0 3px;
-    border-radius: 3px;
-  }
-  .bubble.text a.wa-link {
-    color: #1b8755;
-    text-decoration: underline;
-    text-underline-offset: 2px;
-    cursor: pointer;
-  }
-
-  /* Meta (timestamp + check) — inline trailing the last paragraph */
-  .bubble .meta {
-    display: inline-flex;
-    align-items: center;
-    gap: 3px;
-    font-size: 11px;
-    color: #667781;
-    margin-left: 6px;
-    transform: translateY(3px);
-    font-variant-numeric: tabular-nums;
-    white-space: nowrap;
-  }
-  .bubble .meta .check { width: 14px; height: 9px; display: inline-block; }
-
-  /* QUOTE inline (reply preview inside bubble) */
-  .quote {
-    display: flex;
-    align-items: stretch;
-    gap: 8px;
-    background: #f4f2f3;
-    border-left: 4px solid #93612a; /* "Você" hash color (mustard) */
-    border-radius: 4px;
-    padding: 6px 10px 7px;
-    margin: -2px 0 4px;
-    min-height: 50px;
-    overflow: hidden;
-  }
-  .quote.has-thumb { padding-right: 0; }
-  .quote-content {
-    flex: 1;
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    gap: 2px;
-  }
-  .quote-author {
-    color: #93612a;
-    font-size: 13px;
-    font-weight: 600;
-    line-height: 1.2;
-    letter-spacing: -0.1px;
-  }
-  .quote-label {
-    color: #3c3c43;
-    font-size: 13px;
-    font-weight: 400;
-    line-height: 1.25;
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .quote-icon {
-    width: 13px;
-    height: 13px;
-    flex-shrink: 0;
-    fill: currentColor;
-    opacity: 0.85;
-  }
-  .quote-thumb {
-    width: 47px;
-    height: 50px;
-    object-fit: cover;
-    border-radius: 4px;
-    flex-shrink: 0;
-    align-self: stretch;
-  }
-
-  /* Image-asset bubbles (audio, typing) — asset already includes its bg */
-  .bubble.audio { width: 78%; max-width: 78%; }
-  .bubble.audio img { width: 100%; display: block; border-radius: 9px; }
-
-  .bubble.typing { width: 13%; max-width: 13%; }
-  .bubble.typing img { width: 100%; display: block; }
-
-  /* Photo/image bubble — image with bubble background border around it */
-  .bubble.photo {
-    padding: 3px;
-    border-radius: 9px;
-    width: 66%;
-    max-width: 66%;
-    position: relative;
-  }
-  .bubble.photo.sent     { background: #d9fdd3; }
-  .bubble.photo.received { background: #ffffff; }
-  .bubble.photo img {
-    width: 100%;
-    display: block;
-    border-radius: 6px;
-  }
-  .bubble.photo .meta-overlay {
-    position: absolute;
-    bottom: 10px;
-    right: 9px;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    color: #fff;
-    font-size: 11px;
-    font-weight: 400;
-    text-shadow: 0 0 3px rgba(0, 0, 0, 0.4);
-    font-variant-numeric: tabular-nums;
-  }
-  .bubble.photo .meta-overlay .check {
-    width: 14px;
-    height: 9px;
-    fill: rgba(255, 255, 255, 0.9);
-  }
-  /* Image bubble for chart/document — wider, no overlay, light bg for received */
-  .bubble.image {
-    padding: 3px;
-    border-radius: 9px;
-    width: 75%;
-    max-width: 75%;
-    position: relative;
-  }
-  .bubble.image.received { background: #ffffff; }
-  .bubble.image.sent     { background: #d9fdd3; }
-  .bubble.image img {
-    width: 100%;
-    display: block;
-    border-radius: 6px;
-    aspect-ratio: 1 / 1;        /* reserva espaço enquanto carrega — chart é quadrado */
-    object-fit: cover;
-    background: #f4f2f3;        /* placeholder enquanto img carrega */
-  }
-  .bubble.image .meta {
-    position: absolute;
-    bottom: 6px;
-    right: 9px;
-    background: rgba(255, 255, 255, 0.7);
-    padding: 1px 5px;
-    border-radius: 4px;
-    transform: none;
-    margin: 0;
-  }
-
-  .header {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    z-index: 10;
-    pointer-events: none;
-    user-select: none;
-  }
-
-  .input {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    z-index: 8;
-    pointer-events: none;
-    user-select: none;
-    transition: transform 0.25s ease;
-  }
-
-  .keyboard {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    z-index: 9;
-    transform: translateY(100%);
-    transition: transform 0.25s ease;
-    pointer-events: none;
-    user-select: none;
-  }
-
-  .header img,
-  .input img,
-  .keyboard img {
-    width: 100%;
-    display: block;
-  }
-
-  /* Keyboard open: slide keyboard in, slide input up so its safe-area
-     bottom hides behind keyboard (leaves cream above pill = cream below pill). */
-  .phone.keyboard-open .keyboard {
-    transform: translateY(0);
-  }
-  .phone.keyboard-open .input {
-    transform: translateY(calc(var(--input-extra-safe, 29px) - var(--keyboard-h, 309px)));
-  }
-
-  /* Mic hit area — sits over the right mic icon in input-margin.png.
-     pointer-events:auto overrides the input's none. Only active when keyboard open. */
-  .mic-target {
-    position: absolute;
-    top: 4%;
-    right: 0;
-    width: 16%;
-    height: 38%;
-    z-index: 11;
-    pointer-events: none;
-    cursor: pointer;
-    -webkit-touch-callout: none;
-    -webkit-user-select: none;
-    user-select: none;
-  }
-  .phone.keyboard-open .mic-target {
-    pointer-events: auto;
-  }
-
-  /* Recording overlay — single transparent PNG with lock pill + REC bar.
-     Anchored above keyboard so REC bar sits on the keyboard top. */
-  .rec-overlay {
-    position: absolute;
-    bottom: var(--keyboard-h, 309px);
-    left: 0;
-    width: 100%;
-    z-index: 12;
-    pointer-events: none;
-    display: none;
-  }
-  .rec-overlay img {
-    width: 100%;
-    display: block;
-  }
-  .phone.rec-active .rec-overlay {
-    display: block;
-  }
-
-  /* Live timer — calibrated against REC-ui-target.png via headless render diff.
-     Helvetica Neue 18px weight 300 matched target width within 1px raw. */
-  .rec-timer {
-    position: absolute;
-    left: 10.6%;
-    bottom: 0;
-    height: 34%;
-    display: flex;
-    align-items: center;
-    color: #1a1a1a;
-    font-family: "Helvetica Neue", -apple-system, sans-serif;
-    font-size: 18px;
-    font-weight: 300;
-    font-variant-numeric: tabular-nums;
-  }
-
-  /* Dev controls */
-  .controls {
-    position: fixed;
-    top: 16px;
-    right: 16px;
-    display: flex;
-    gap: 8px;
-    z-index: 100;
-  }
-  .controls button {
-    background: #2a2a2a;
-    color: #efeae2;
-    border: 1px solid #444;
-    padding: 6px 12px;
-    border-radius: 6px;
-    font-family: inherit;
+  /* Footer */
+  footer {
+    margin-top: 60px;
+    color: var(--ink-mute);
     font-size: 12px;
-    cursor: pointer;
+    text-align: center;
   }
-  .controls button:hover {
-    background: #3a3a3a;
-  }
-  .controls.hidden {
-    display: none;
+  footer code {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    background: rgba(0,0,0,0.05);
+    padding: 1px 5px;
+    border-radius: 3px;
   }
 </style>
 </head>
-
 <body>
 
-<div class="controls" id="controls">
-  <button onclick="toggleKeyboard()">Teclado</button>
-  <button onclick="playTela2()">Tela 2</button>
-  <button onclick="playTela3()">Tela 3</button>
-  <button onclick="playTela4()">Tela 4</button>
-  <button onclick="playAll()">Roteiro</button>
-  <button onclick="resetChat()">Reset</button>
-  <button onclick="toggleControls()">Esconder</button>
+<div class="page">
+
+  <header class="hero">
+    <svg class="smile" viewBox="0 0 36 36">
+      <circle cx="18" cy="18" r="18"/>
+      <path d="M11 18 Q18 25 25 18"/>
+    </svg>
+    <h1>Protótipos Jota</h1>
+  </header>
+  <p class="sub">Decupagem dos 5 roteiros, encenados em WhatsApp ultra-realista.</p>
+
+  <!-- ROTEIRO 1 — pronto -->
+  <article class="roteiro">
+    <div class="roteiro-head">
+      <div>
+        <span class="roteiro-num">Roteiro 01</span>
+        <h2 class="roteiro-title">Categorização</h2>
+      </div>
+      <span class="roteiro-status status-done">Pronto</span>
+    </div>
+    <p class="roteiro-meta">
+      <strong>Confeiteira</strong> · registra gastos por voz, foto, texto · regra automática para o cartão Nubank no Café do Parque · relatório mensal por categoria.
+    </p>
+
+    <div class="roteiro-links">
+      <a class="primary" href="roteiro1.html">Abrir protótipo</a>
+      <a href="roteiro1.html?autoplay=all&hidedev=1">Roteiro completo (autoplay)</a>
+    </div>
+
+    <ul class="telas-list">
+      <li class="tela-row">
+        <span class="num">Tela 1</span>
+        <span class="desc">Regra de categorização por áudio <em>· Café do Parque · Nubank → Alimentação</em></span>
+        <a href="roteiro1.html?autoplay=tela1&hidedev=1">autoplay</a>
+      </li>
+      <li class="tela-row">
+        <span class="num">Tela 2</span>
+        <span class="desc">Foto da nota fiscal + caption <em>· R$ 347 · Insumos</em></span>
+        <a href="roteiro1.html?autoplay=tela2&hidedev=1">autoplay</a>
+      </li>
+      <li class="tela-row">
+        <span class="num">Tela 3</span>
+        <span class="desc">Áudio Carla salário <em>· R$ 1.900 · Folha de pagamento</em></span>
+        <a href="roteiro1.html?autoplay=tela3&hidedev=1">autoplay</a>
+      </li>
+      <li class="tela-row">
+        <span class="num">Tela 4</span>
+        <span class="desc">Relatório por categoria <em>· chart Distribuição de gastos</em></span>
+        <a href="roteiro1.html?autoplay=tela4&hidedev=1">autoplay</a>
+      </li>
+    </ul>
+  </article>
+
+  <!-- ROTEIRO 2 — pendente -->
+  <article class="roteiro todo">
+    <div class="roteiro-head">
+      <div>
+        <span class="roteiro-num">Roteiro 02</span>
+        <h2 class="roteiro-title">Fiado</h2>
+      </div>
+      <span class="roteiro-status status-todo">A fazer</span>
+    </div>
+    <p class="roteiro-meta">
+      <strong>Eletricista autônomo</strong> · registra contas a receber · consulta entradas previstas · panorama consolidado do mês.
+    </p>
+  </article>
+
+  <!-- ROTEIRO 3 — pendente -->
+  <article class="roteiro todo">
+    <div class="roteiro-head">
+      <div>
+        <span class="roteiro-num">Roteiro 03</span>
+        <h2 class="roteiro-title">3 Perspectivas</h2>
+      </div>
+      <span class="roteiro-status status-todo">A fazer</span>
+    </div>
+    <p class="roteiro-meta">
+      <strong>Confeiteira · Entregador · Cliente</strong> · um mesmo pedido visto pelos três · cada um faz uma pergunta diferente.
+    </p>
+  </article>
+
+  <!-- ROTEIRO 4 — pendente -->
+  <article class="roteiro todo">
+    <div class="roteiro-head">
+      <div>
+        <span class="roteiro-num">Roteiro 04</span>
+        <h2 class="roteiro-title">Lista funcional</h2>
+      </div>
+      <span class="roteiro-status status-todo">A fazer</span>
+    </div>
+    <p class="roteiro-meta">
+      Cinco features em sequência direta · input multimodal, relatório, conta a pagar com Pix, fluxo de caixa multi-banco, insights inteligentes.
+    </p>
+  </article>
+
+  <!-- ROTEIRO 5 — pendente -->
+  <article class="roteiro todo">
+    <div class="roteiro-head">
+      <div>
+        <span class="roteiro-num">Roteiro 05</span>
+        <h2 class="roteiro-title">A moto</h2>
+      </div>
+      <span class="roteiro-status status-todo">A fazer</span>
+    </div>
+    <p class="roteiro-meta">
+      Pessoa quer comprar uma moto · diagnóstico de gastos · sugestão de economia · projeção temporal até a meta.
+    </p>
+  </article>
+
+  <footer>
+    Repo local: <code>/Users/felippo/Documents/jota-real-mock/</code> · v2.2 (Roteiro 1 estável)
+  </footer>
+
 </div>
-
-<div class="phone" id="phone">
-  <div class="chat">
-    <div class="messages" id="messages"></div>
-  </div>
-
-  <div class="header">
-    <img src="header.png" alt="">
-  </div>
-
-  <div class="input">
-    <img src="input-margin.png" alt="" id="inputImg">
-    <div class="mic-target" id="micTarget" aria-label="Pressionar para gravar"></div>
-  </div>
-
-  <div class="keyboard">
-    <img src="Slice 1.png" alt="" id="keyboardImg">
-  </div>
-
-  <div class="rec-overlay" id="recOverlay">
-    <img src="REC-ui.png" alt="">
-    <div class="rec-timer" id="recTimer">0:00</div>
-  </div>
-</div>
-
-<script>
-  const phone = document.getElementById('phone');
-  const controls = document.getElementById('controls');
-  const keyboardImg = document.getElementById('keyboardImg');
-  const inputImg = document.getElementById('inputImg');
-
-  // Reference image: input.png has equal padding above/below pill.
-  // input-margin.png adds extra cream below pill (iOS home-indicator safe area).
-  // The difference between them = how much input must slide UP behind the
-  // keyboard so the visible cream below pill matches the cream above.
-  const inputRef = new Image();
-  let kbLoaded = false, marginLoaded = false, refLoaded = false;
-
-  function recompute() {
-    const phoneW = phone.getBoundingClientRect().width;
-
-    if (kbLoaded) {
-      const kbH = phoneW * (keyboardImg.naturalHeight / keyboardImg.naturalWidth);
-      document.documentElement.style.setProperty('--keyboard-h', kbH + 'px');
-    }
-
-    if (marginLoaded && refLoaded) {
-      const marginH = phoneW * (inputImg.naturalHeight / inputImg.naturalWidth);
-      const refH = phoneW * (inputRef.naturalHeight / inputRef.naturalWidth);
-      document.documentElement.style.setProperty('--input-extra-safe', (marginH - refH) + 'px');
-    }
-  }
-
-  keyboardImg.addEventListener('load', () => { kbLoaded = true; recompute(); });
-  inputImg.addEventListener('load', () => { marginLoaded = true; recompute(); });
-  inputRef.onload = () => { refLoaded = true; recompute(); };
-  inputRef.src = 'input.png';
-
-  function toggleKeyboard() {
-    phone.classList.toggle('keyboard-open');
-  }
-
-  function toggleControls() {
-    controls.classList.toggle('hidden');
-  }
-
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'k') toggleKeyboard();
-    if (e.key === 'h') toggleControls();
-  });
-
-  // Recording: press-and-hold on input mic icon.
-  const micTarget = document.getElementById('micTarget');
-  const recTimerEl = document.getElementById('recTimer');
-  let recInterval = null;
-  let recStart = 0;
-
-  function updateTimer() {
-    const elapsed = Math.floor((Date.now() - recStart) / 1000);
-    const m = Math.floor(elapsed / 60);
-    const s = elapsed % 60;
-    recTimerEl.textContent = `${m}:${String(s).padStart(2, '0')}`;
-  }
-
-  function startRec(e) {
-    if (e) e.preventDefault();
-    if (!phone.classList.contains('keyboard-open')) return;
-    phone.classList.add('rec-active');
-    recStart = Date.now();
-    recTimerEl.textContent = '0:00';
-    recInterval = setInterval(updateTimer, 200);
-  }
-
-  let lastRecDurationMs = 0;
-  let micPressed = false;  // true only between mousedown-on-mic and the matching mouseup
-
-  function stopRec() {
-    if (!phone.classList.contains('rec-active')) return;
-    lastRecDurationMs = Date.now() - recStart;
-    phone.classList.remove('rec-active');
-    clearInterval(recInterval);
-    recInterval = null;
-    recTimerEl.textContent = '0:00';
-  }
-
-  function micDown(e) { micPressed = true; startRec(e); }
-  function micUp() {
-    if (!micPressed) return;       // ignore mouseups from clicks elsewhere
-    micPressed = false;
-    stopRec();
-    afterRecRelease();
-    lastRecDurationMs = 0;          // consume — never reuse a stale duration
-  }
-
-  micTarget.addEventListener('mousedown', micDown);
-  micTarget.addEventListener('touchstart', micDown, { passive: false });
-  window.addEventListener('mouseup', micUp);
-  window.addEventListener('touchend', micUp);
-  window.addEventListener('touchcancel', () => { micPressed = false; stopRec(); });
-
-  // Plays Roteiro 1 end-to-end with realistic pauses between scenes.
-  function playAll() {
-    resetChat();
-    setTimeout(() => playTela1(),  300);
-    setTimeout(() => playTela2(),  9000);
-    setTimeout(() => playTela3(), 18000);
-    setTimeout(() => playTela4(), 26000);
-  }
-
-  // ?autoplay=tela1|tela2|tela3|tela4|all — renders the scene(s) without user interaction.
-  function applyAutoplay() {
-    const p = new URLSearchParams(location.search).get('autoplay');
-    if (!p) return;
-    setTimeout(() => phone.classList.add('keyboard-open'), 100);
-    const map = { tela1: playTela1, tela2: playTela2, tela3: playTela3, tela4: playTela4 };
-    if (map[p]) setTimeout(map[p], 300);
-    if (p === 'all') setTimeout(playAll, 300);
-    if (new URLSearchParams(location.search).get('hidedev')) controls.classList.add('hidden');
-  }
-
-  // ────────────────────────────────────────────────────────────
-  // Chat / scenes
-  // ────────────────────────────────────────────────────────────
-
-  const messagesEl = document.getElementById('messages');
-
-  function nowHHMM() {
-    const d = new Date();
-    return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
-  }
-
-  // Continuously scrolls to bottom for `dur` ms — used to track CSS transitions
-  // (keyboard open/close) so the last bubble stays glued to the input.
-  function scrollToBottomFor(dur = 320) {
-    const start = performance.now();
-    function tick() {
-      messagesEl.scrollTop = messagesEl.scrollHeight;
-      if (performance.now() - start < dur) requestAnimationFrame(tick);
-    }
-    tick();
-  }
-
-  function appendBubble(html, classes) {
-    const div = document.createElement('div');
-    div.className = `bubble ${classes}`;
-    div.innerHTML = html;
-    messagesEl.appendChild(div);
-    requestAnimationFrame(() => { messagesEl.scrollTop = messagesEl.scrollHeight; });
-    return div;
-  }
-
-  // Observe phone class changes (keyboard open/close) → keep last bubble visible.
-  new MutationObserver(() => scrollToBottomFor(320))
-    .observe(phone, { attributes: true, attributeFilter: ['class'] });
-
-  // SVG check icons (double-tick: gray=delivered, blue=read; single=sent)
-  const CHECK_DOUBLE_GRAY = `<svg class="check" viewBox="0 0 16 11" fill="none"><path d="M11.07 0.65L4.37 7.4 1.18 4.21l-.92.91 4.11 4.13 7.62-7.6z" fill="#8696a0"/><path d="M15.07 0.65L8.37 7.4l-.7-.7 6.5-6.55z" fill="#8696a0"/></svg>`;
-  const CHECK_DOUBLE_BLUE = `<svg class="check" viewBox="0 0 16 11" fill="none"><path d="M11.07 0.65L4.37 7.4 1.18 4.21l-.92.91 4.11 4.13 7.62-7.6z" fill="#53bdeb"/><path d="M15.07 0.65L8.37 7.4l-.7-.7 6.5-6.55z" fill="#53bdeb"/></svg>`;
-  const CHECK_SINGLE_GRAY = `<svg class="check" viewBox="0 0 16 11" fill="none"><path d="M12.07 0.65L5.37 7.4 2.18 4.21l-.92.91 4.11 4.13 7.62-7.6z" fill="#8696a0"/></svg>`;
-
-  // Tail SVGs (bottom corner) — convex iOS-style
-  const TAIL_RECEIVED = `<svg class="tail-svg" viewBox="0 0 18 36" preserveAspectRatio="none"><path d="M18,0 L18,36 C10,34 4,28 0,18 C8,18 14,12 18,0 Z" fill="#ffffff"/></svg>`;
-  const TAIL_SENT     = `<svg class="tail-svg" viewBox="0 0 18 36" preserveAspectRatio="none"><path d="M0,0 L0,36 C8,34 14,28 18,18 C10,18 4,12 0,0 Z" fill="#d9fdd3"/></svg>`;
-
-  // Quote icons (SF Symbol-style)
-  const ICON_MIC    = `<svg class="quote-icon" viewBox="0 0 16 16"><path d="M8 1a2.5 2.5 0 0 0-2.5 2.5v5a2.5 2.5 0 0 0 5 0v-5A2.5 2.5 0 0 0 8 1zM4.5 7v1.5a3.5 3.5 0 0 0 7 0V7h1v1.5a4.5 4.5 0 0 1-4 4.475V14.5h2.5v1h-6v-1H7.5v-1.525a4.5 4.5 0 0 1-4-4.475V7h1z"/></svg>`;
-  const ICON_CAMERA = `<svg class="quote-icon" viewBox="0 0 16 16"><path d="M5 3l-1 1.5H2A1.5 1.5 0 0 0 0.5 6v6.5A1.5 1.5 0 0 0 2 14h12a1.5 1.5 0 0 0 1.5-1.5V6A1.5 1.5 0 0 0 14 4.5h-2L11 3H5zm3 3.5a3 3 0 1 1 0 6 3 3 0 0 1 0-6z"/></svg>`;
-
-  /**
-   * Convert WhatsApp-style markdown to HTML, mirroring iOS rendering.
-   * Handles: *bold*, _italic_, ~strike~, `mono`, auto-link URLs/long numbers.
-   */
-  function formatWAText(raw) {
-    const esc = (s) => s.replace(/[&<>]/g, (c) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[c]));
-    const slots = [];
-    let s = esc(raw).replace(/`([^`\n]+)`/g, (_, m) => {
-      slots.push(`<code>${m}</code>`);
-      return ` ${slots.length - 1} `;
-    });
-    s = s.replace(/\b(https?:\/\/[^\s<]+|www\.[^\s<]+)/g,
-      (u) => `<a class="wa-link">${u}</a>`);
-    s = s.replace(/(?<![\d>])(\d[\d.\-\s]{10,})(?!\d)/g, (m) => {
-      const digits = m.replace(/\D/g, '');
-      return digits.length >= 11 ? `<a class="wa-link">${m}</a>` : m;
-    });
-    s = s.replace(/(?<![*\w])\*(?!\s)([^*\n]+?)(?<!\s)\*(?![*\w])/g, '<strong>$1</strong>');
-    s = s.replace(/(?<![_\w])_(?!\s)([^_\n]+?)(?<!\s)_(?![_\w])/g, '<em>$1</em>');
-    s = s.replace(/(?<![~\w])~(?!\s)([^~\n]+?)(?<!\s)~(?![~\w])/g, '<s>$1</s>');
-    s = s.replace(/ (\d+) /g, (_, i) => slots[+i]);
-    return s.replace(/\n/g, '<br>');
-  }
-
-  function metaHtml(opts = {}) {
-    let check = '';
-    if (opts.check === 'sent')      check = CHECK_SINGLE_GRAY;
-    else if (opts.check === 'delivered') check = CHECK_DOUBLE_GRAY;
-    else if (opts.check === 'read') check = CHECK_DOUBLE_BLUE;
-    return `<span class="meta">${nowHHMM()}${check}</span>`;
-  }
-
-  // Apply 'is-lead' to the new bubble if its sender differs from the previous bubble.
-  function applyLead(bubbleEl) {
-    const prev = bubbleEl.previousElementSibling;
-    if (!prev || !prev.classList.contains('bubble')) {
-      bubbleEl.classList.add('is-lead');
-      return;
-    }
-    const prevSender = prev.classList.contains('sent') ? 'sent' : 'received';
-    const thisSender = bubbleEl.classList.contains('sent') ? 'sent' : 'received';
-    if (prevSender !== thisSender) bubbleEl.classList.add('is-lead');
-  }
-
-  function audioBubble() {
-    const b = appendBubble(`<img src="audio-sending-blank.png" alt="">`, 'sent audio');
-    applyLead(b);
-    return b;
-  }
-  function typingBubble() {
-    const b = appendBubble(`<img src="typing.png" alt="">`, 'received typing');
-    applyLead(b);
-    return b;
-  }
-  function textBubble(text, kind = 'received', opts = {}) {
-    const tail = (kind === 'received') ? TAIL_RECEIVED : TAIL_SENT;
-    const formatted = formatWAText(text);
-    const quote = opts.quote ? renderQuote(opts.quote) : '';
-    const b = appendBubble(`${quote}${formatted}${metaHtml(opts)}${tail}`, `${kind} text`);
-    applyLead(b);
-    return b;
-  }
-  function photoBubble(src, opts = {}) {
-    const check = opts.check === 'delivered' ? CHECK_DOUBLE_GRAY :
-                  opts.check === 'read' ? CHECK_DOUBLE_BLUE :
-                  opts.check === 'sent' ? CHECK_SINGLE_GRAY : '';
-    const b = appendBubble(
-      `<img src="${src}" alt=""><span class="meta-overlay">${nowHHMM()}${check}</span>`,
-      'sent photo'
-    );
-    applyLead(b);
-    return b;
-  }
-  function imageBubble(src, kind = 'received', opts = {}) {
-    const b = appendBubble(
-      `<img src="${src}" alt=""><span class="meta">${nowHHMM()}</span>`,
-      `${kind} image`
-    );
-    applyLead(b);
-    // Re-scroll once the image has its final dimensions
-    const img = b.querySelector('img');
-    img.addEventListener('load', () => scrollToBottomFor(80));
-    return b;
-  }
-  function datePill(label = 'Hoje') {
-    const div = document.createElement('div');
-    div.className = 'date-pill';
-    div.textContent = label;
-    messagesEl.appendChild(div);
-    requestAnimationFrame(() => { messagesEl.scrollTop = messagesEl.scrollHeight; });
-    return div;
-  }
-
-  function renderQuote(q) {
-    // q = { author, type: 'audio'|'photo'|'text', label, thumb? }
-    const icon = q.type === 'audio' ? ICON_MIC : q.type === 'photo' ? ICON_CAMERA : '';
-    const thumbHtml = q.thumb ? `<img class="quote-thumb" src="${q.thumb}" alt="">` : '';
-    const cls = q.thumb ? 'quote has-thumb' : 'quote';
-    return `
-      <div class="${cls}">
-        <div class="quote-content">
-          <div class="quote-author">${q.author}</div>
-          <div class="quote-label">${icon}${q.label}</div>
-        </div>
-        ${thumbHtml}
-      </div>`;
-  }
-
-  // Scene state — tracks which scenes have already played to avoid retrigger.
-  const sceneState = {
-    tela1Played: false,
-    tela2Played: false,
-    tela3Played: false,
-    tela4Played: false,
-  };
-
-  function afterRecRelease() {
-    // Hold-mic releases trigger the next un-played audio scene in order (1 then 3).
-    // Each playTelaX is idempotent (sets its own flag), so no need to set here.
-    if (lastRecDurationMs < 500) return;
-    if (!sceneState.tela1Played)      playTela1();
-    else if (!sceneState.tela3Played) playTela3();
-  }
-
-  function resetChat() {
-    messagesEl.innerHTML = '';
-    Object.keys(sceneState).forEach(k => sceneState[k] = false);
-  }
-
-  // ────────────────────────────────────────────────────────────
-  // ROTEIRO 1 — Categorização (Confeiteira)
-  // ────────────────────────────────────────────────────────────
-
-  function ensureDatePill() {
-    if (!messagesEl.querySelector('.date-pill')) datePill('Hoje');
-  }
-
-  // Tela 1: regra de categorização por áudio
-  function playTela1() {
-    if (sceneState.tela1Played) return;
-    sceneState.tela1Played = true;
-    ensureDatePill();
-    setTimeout(() => {
-      const audio = audioBubble();
-      const img = audio.querySelector('img');
-      setTimeout(() => { img.src = 'audio-sending.png'; }, 700);
-      setTimeout(() => { img.src = 'audio-sent.png'; }, 1700);
-
-      setTimeout(() => {
-        const typing = typingBubble();
-        setTimeout(() => {
-          typing.remove();
-          textBubble(
-            'Entendi! A partir de agora, gastos no *Café do Parque* feitos no cartão Nubank vão ser categorizados automaticamente como _Alimentação_.',
-            'received',
-            { quote: { author: 'Você', type: 'audio', label: 'Mensagem de voz (0:09)' } }
-          );
-        }, 2400);
-      }, 2200);
-    }, 250);
-  }
-
-  // Tela 2: foto da nota fiscal
-  function playTela2() {
-    if (sceneState.tela2Played) return;
-    sceneState.tela2Played = true;
-    ensureDatePill();
-
-    setTimeout(() => {
-      photoBubble('nota-fiscal.png', { check: 'delivered' });
-      setTimeout(() => {
-        textBubble('Anota esse gasto aí', 'sent', { check: 'delivered' });
-      }, 600);
-      setTimeout(() => {
-        const typing = typingBubble();
-        setTimeout(() => {
-          typing.remove();
-          textBubble(
-            '✅ Saída: *R$ 347,00* · Insumos · registrado',
-            'received',
-            { quote: { author: 'Você', type: 'photo', label: 'Foto', thumb: 'nota-fiscal.png' } }
-          );
-        }, 2200);
-      }, 1800);
-    }, 400);
-  }
-
-  // Tela 3: áudio Carla salário (registro direto, sem regra)
-  function playTela3() {
-    if (sceneState.tela3Played) return;
-    sceneState.tela3Played = true;
-    ensureDatePill();
-
-    setTimeout(() => {
-      const audio = audioBubble();
-      const img = audio.querySelector('img');
-      setTimeout(() => { img.src = 'audio-sending.png'; }, 700);
-      setTimeout(() => { img.src = 'audio-sent.png'; }, 1700);
-
-      setTimeout(() => {
-        const typing = typingBubble();
-        setTimeout(() => {
-          typing.remove();
-          textBubble(
-            '✅ Saída: *R$ 1.900* · Folha de pagamento · registrado',
-            'received'
-          );
-        }, 2200);
-      }, 2000);
-    }, 250);
-  }
-
-  // Tela 4: relatório por categoria com chart
-  function playTela4() {
-    if (sceneState.tela4Played) return;
-    sceneState.tela4Played = true;
-    ensureDatePill();
-
-    setTimeout(() => {
-      textBubble('Jota, como ficou o mês por categoria?', 'sent', { check: 'read' });
-      setTimeout(() => {
-        const typing = typingBubble();
-        setTimeout(() => {
-          typing.remove();
-          imageBubble('chart-categorias.png', 'received');
-        }, 2400);
-      }, 1500);
-    }, 250);
-  }
-
-  applyAutoplay();
-</script>
 
 </body>
 </html>
