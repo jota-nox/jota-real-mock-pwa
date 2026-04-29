@@ -226,27 +226,30 @@
   }
 
   /* Image-asset bubbles (audio, typing) — asset already includes its bg */
-  .bubble.audio { width: 78%; max-width: 78%; padding-right: 14px; /* SVG bg applied via JS */ }
-  .bubble.audio img { width: 100%; display: block; }
+  .bubble.audio { width: 78%; max-width: 78%; padding: 10px 16px 8px 10px; /* SVG bg applied via JS */ }
+  .bubble.audio .audio-stack { display: flex; flex-direction: column; gap: 4px; }
+  .bubble.audio .audio-stack img { width: 100%; display: block; }
 
   .bubble.typing { width: 13%; max-width: 13%; }
   .bubble.typing img { width: 100%; display: block; }
 
   /* Photo/image bubble — image with bubble background border around it */
   .bubble.photo {
-    padding: 5px 16px 6px 5px;
+    padding: 10px;
     width: 66%;
     max-width: 66%;
     position: relative;
     background-size: 100% 100%;
     background-repeat: no-repeat;
   }
-  .bubble.photo.sent { /* SVG bg applied via JS */ }
-  .bubble.photo.received { padding: 5px 5px 6px 16px; /* SVG bg applied via JS */ }
+  .bubble.photo.sent     { /* SVG bg applied via JS */ }
+  .bubble.photo.received { /* SVG bg applied via JS */ }
   .bubble.photo img {
     width: 100%;
     display: block;
     border-radius: 6px;
+    height: auto;              /* aspect natural da foto cropada */
+    background: #f4f2f3;
   }
   .bubble.photo .meta-overlay {
     position: absolute;
@@ -710,7 +713,23 @@
   }
 
   function audioBubble() {
-    const b = appendBubble(`<img src="audio-sending-blank-clean.png" alt="">`, 'sent audio');
+    const b = appendBubble(
+      `<div class="audio-stack">` +
+        `<img class="audio-elements" src="audio-ref-elementos.png" alt="">` +
+        `<img class="audio-times" src="audio-ref-timestamps.png" alt="">` +
+      `</div>`,
+      'sent audio'
+    );
+    // Re-aplica shape após imagens carregarem (senão SVG bg fica zerado).
+    const imgs = b.querySelectorAll('img');
+    let loaded = 0;
+    imgs.forEach(img => img.addEventListener('load', () => {
+      loaded++;
+      if (loaded === imgs.length) {
+        applyBubbleShape(b);
+        scrollToBottomFor(80);
+      }
+    }));
     return b;
   }
   function typingBubble() {
@@ -727,10 +746,19 @@
     const check = opts.check === 'delivered' ? CHECK_DOUBLE_GRAY :
                   opts.check === 'read' ? CHECK_DOUBLE_BLUE :
                   opts.check === 'sent' ? CHECK_SINGLE_GRAY : '';
+    // opts.noOverlay = true quando a foto JÁ tem timestamp baked
+    const overlay = opts.noOverlay ? '' :
+                    `<span class="meta-overlay">${nowHHMM()}${check}</span>`;
     const b = appendBubble(
-      `<img src="${src}" alt=""><span class="meta-overlay">${nowHHMM()}${check}</span>`,
+      `<img src="${src}" alt="">${overlay}`,
       'sent photo'
     );
+    // Re-aplica shape após img carregar (senão SVG bg fica zerado).
+    const img = b.querySelector('img');
+    img.addEventListener('load', () => {
+      applyBubbleShape(b);
+      scrollToBottomFor(80);
+    });
     return b;
   }
   function imageBubble(src, kind = 'received', opts = {}) {
@@ -739,9 +767,13 @@
       `<img src="${src}" alt="">`,
       `${kind} image`
     );
-    // Re-scroll once the image has its final dimensions
+    // Re-aplica bubble shape APÓS img carregar (senão SVG bg fica zerado e
+    // a imagem aparece sem o frame da bolha). Re-scroll também.
     const img = b.querySelector('img');
-    img.addEventListener('load', () => scrollToBottomFor(80));
+    img.addEventListener('load', () => {
+      applyBubbleShape(b);
+      scrollToBottomFor(80);
+    });
     return b;
   }
   function datePill(label = 'Hoje') {
@@ -803,10 +835,7 @@
     sceneState.tela1Played = true;
     ensureDatePill();
     setTimeout(() => {
-      const audio = audioBubble();
-      const img = audio.querySelector('img');
-      setTimeout(() => { img.src = 'audio-sending-clean.png'; }, 700);
-      setTimeout(() => { img.src = 'audio-sent-clean.png'; }, 1700);
+      audioBubble();
 
       setTimeout(() => {
         const typing = typingBubble();
@@ -829,7 +858,7 @@
     ensureDatePill();
 
     setTimeout(() => {
-      photoBubble('nota-fiscal.png', { check: 'delivered' });
+      photoBubble('nota-fiscal-v3.png', { noOverlay: true });
       setTimeout(() => {
         textBubble('Anota esse gasto aí', 'sent', { check: 'delivered' });
       }, 600);
@@ -840,7 +869,7 @@
           textBubble(
             '✅ Saída: *R$ 347,00* · Insumos · registrado',
             'received',
-            { quote: { author: 'Você', type: 'photo', label: 'Foto', thumb: 'nota-fiscal.png' } }
+            { quote: { author: 'Você', type: 'photo', label: 'Foto', thumb: 'nota-fiscal-v3.png' } }
           );
         }, 2200);
       }, 1800);
@@ -854,10 +883,7 @@
     ensureDatePill();
 
     setTimeout(() => {
-      const audio = audioBubble();
-      const img = audio.querySelector('img');
-      setTimeout(() => { img.src = 'audio-sending-clean.png'; }, 700);
-      setTimeout(() => { img.src = 'audio-sent-clean.png'; }, 1700);
+      audioBubble();
 
       setTimeout(() => {
         const typing = typingBubble();

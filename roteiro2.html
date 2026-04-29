@@ -224,8 +224,9 @@
   }
 
   /* Image-asset bubbles (audio, typing) — asset already includes its bg */
-  .bubble.audio { width: 78%; max-width: 78%; padding-right: 14px; /* SVG bg applied via JS */ }
-  .bubble.audio img { width: 100%; display: block; }
+  .bubble.audio { width: 78%; max-width: 78%; padding: 10px 16px 8px 10px; /* SVG bg applied via JS */ }
+  .bubble.audio .audio-stack { display: flex; flex-direction: column; gap: 4px; }
+  .bubble.audio .audio-stack img { width: 100%; display: block; }
 
   .bubble.typing { width: 13%; max-width: 13%; }
   .bubble.typing img { width: 100%; display: block; }
@@ -708,7 +709,22 @@
   }
 
   function audioBubble() {
-    const b = appendBubble(`<img src="audio-sending-blank-clean.png" alt="">`, 'sent audio');
+    const b = appendBubble(
+      `<div class="audio-stack">` +
+        `<img class="audio-elements" src="audio-ref-elementos.png" alt="">` +
+        `<img class="audio-times" src="audio-ref-timestamps.png" alt="">` +
+      `</div>`,
+      'sent audio'
+    );
+    const imgs = b.querySelectorAll('img');
+    let loaded = 0;
+    imgs.forEach(img => img.addEventListener('load', () => {
+      loaded++;
+      if (loaded === imgs.length) {
+        applyBubbleShape(b);
+        scrollToBottomFor(80);
+      }
+    }));
     return b;
   }
   function typingBubble() {
@@ -799,10 +815,7 @@
     sceneState.tela1Played = true;
     ensureDatePill();
     setTimeout(() => {
-      const audio = audioBubble();
-      const img = audio.querySelector('img');
-      setTimeout(() => { img.src = 'audio-sending-clean.png'; }, 700);
-      setTimeout(() => { img.src = 'audio-sent-clean.png'; }, 1700);
+      audioBubble();
 
       setTimeout(() => {
         const typing = typingBubble();
