@@ -2,7 +2,12 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Jota">
+<meta name="theme-color" content="#efeae2">
+<link rel="apple-touch-icon" href="touch-icon.png">
 <title>Jota — Protótipos dos roteiros</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -243,6 +248,11 @@
     background: rgba(0,0,0,0.05);
     padding: 1px 5px;
     border-radius: 3px;
+  }
+
+  /* PWA standalone */
+  @media (display-mode: standalone) {
+    .page { padding-top: max(56px, env(safe-area-inset-top) + 16px); padding-bottom: max(80px, env(safe-area-inset-bottom) + 24px); }
   }
 </style>
 </head>

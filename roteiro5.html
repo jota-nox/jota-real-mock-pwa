@@ -3,6 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Jota">
+<meta name="theme-color" content="#efeae2">
+<link rel="apple-touch-icon" href="touch-icon.png">
 <title>Jota — Roteiro 5 (A Moto)</title>
 
 <!--
@@ -425,6 +430,27 @@
   }
   .controls.hidden {
     display: none;
+  }
+
+  /* PWA standalone — full screen no iPhone real */
+  @media (display-mode: standalone) {
+    body {
+      padding: 0;
+      background: var(--bg-cream);
+    }
+    .phone {
+      width: 100vw;
+      height: 100dvh;
+      border-radius: 0;
+      box-shadow: none;
+    }
+    /* Header limpo (sem status bar embutido) — empurra abaixo da safe area top */
+    .header {
+      padding-top: env(safe-area-inset-top);
+      background: var(--bg-cream);
+    }
+    /* Esconde dev controls no protótipo "ao vivo" */
+    .controls { display: none !important; }
   }
 </style>
 </head>
