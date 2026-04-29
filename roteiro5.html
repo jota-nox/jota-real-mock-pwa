@@ -513,6 +513,14 @@
     }
     .controls { display: none !important; }
   }
+
+  /* Mobile/standalone: estende keyboard pra cobrir home indicator do iPhone */
+  @media (max-width: 500px), (display-mode: standalone) {
+    .keyboard {
+      background: #cbcdd2;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+  }
 </style>
 </head>
 
