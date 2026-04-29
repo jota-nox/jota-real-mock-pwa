@@ -452,6 +452,25 @@
     /* Esconde dev controls no protótipo "ao vivo" */
     .controls { display: none !important; }
   }
+
+  /* Triggers invisíveis em cima das teclas Q E R T Y e RETORNO */
+  .kb-target {
+    position: absolute;
+    cursor: pointer;
+    pointer-events: none;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+  }
+  .phone.keyboard-open .kb-target { pointer-events: auto; }
+  /* Linha QWERTY do teclado iOS (y 16-28% do PNG, cada tecla ~10% wide) */
+  .kb-q { left: 0%;  top: 16%; width: 10%; height: 13%; }
+  .kb-e { left: 20%; top: 16%; width: 10%; height: 13%; }
+  .kb-r { left: 30%; top: 16%; width: 10%; height: 13%; }
+  .kb-t { left: 40%; top: 16%; width: 10%; height: 13%; }
+  .kb-y { left: 50%; top: 16%; width: 10%; height: 13%; }
+  /* Tecla retorno (canto inferior direito do teclado) */
+  .kb-return { left: 76%; top: 64%; width: 23%; height: 14%; }
+
 </style>
 </head>
 
@@ -482,6 +501,11 @@
 
   <div class="keyboard">
     <img src="Slice 1.png" alt="" id="keyboardImg">
+    <div class="kb-target kb-q" data-tela="1"></div>
+    <div class="kb-target kb-e" data-tela="2"></div>
+    <div class="kb-target kb-r" data-tela="3"></div>
+    <div class="kb-target kb-t" data-tela="4"></div>
+    <div class="kb-target kb-return" data-action="next"></div>
   </div>
 
   <div class="rec-overlay" id="recOverlay">
@@ -614,7 +638,7 @@
     }
     const map = { tela1: playTela1, tela2: playTela2, tela3: playTela3, tela4: playTela4 };
     if (map[p]) setTimeout(map[p], 300);
-    if (p === 'all') setTimeout(playAll, 300);
+    if (p === 'all' || params.get('playall') === '1') setTimeout(playAll, 300);
     if (params.get('hidedev')) controls.classList.add('hidden');
   }
 
@@ -824,7 +848,9 @@
   };
 
   function afterRecRelease() {
-    // R3 não tem cenas com áudio — todos os atos via botões.
+    // MIC release dispara próxima cena não tocada (qualquer tipo).
+    if (lastRecDurationMs < 500) return;
+    advanceNext();
   }
 
   function resetChat() {
@@ -917,6 +943,52 @@
       }, 2400);
     }, 250);
   }
+
+
+  // ────────────────────────────────────────────────────────────
+  // Triggers PWA — MIC, RETURN e Q E R T Y disparam cenas
+  // MIC ou RETURN avançam pra próxima tela não tocada (counter único).
+  // Q E R T Y disparam tela específica (override).
+  // Play All só ativo via ?playall=1 (vindo do index).
+  // ────────────────────────────────────────────────────────────
+  function advanceNext() {
+    const fns = { 1: playTela1, 2: playTela2, 3: playTela3, 4: playTela4, 5: typeof playTela5 !== 'undefined' ? playTela5 : null };
+    for (let i = 1; i <= 5; i++) {
+      if (sceneState[`tela${i}Played`]) continue;
+      if (fns[i]) { fns[i](); return; }
+    }
+  }
+  document.querySelectorAll('.kb-target').forEach(el => {
+    el.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (!phone.classList.contains('keyboard-open')) return;
+      const tela = el.dataset.tela;
+      if (tela) {
+        const fn = window['playTela' + tela];
+        if (typeof fn === 'function') fn();
+      } else if (el.dataset.action === 'next') {
+        advanceNext();
+      }
+    });
+  });
+  // Atalhos físicos: Q E R T Y disparam telas, ENTER avança
+  document.addEventListener('keydown', (e) => {
+    const map = { q: 1, e: 2, r: 3, t: 4, y: 5 };
+    const tela = map[e.key.toLowerCase()];
+    if (tela) {
+      const fn = window['playTela' + tela];
+      if (typeof fn === 'function') { e.preventDefault(); fn(); }
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      advanceNext();
+    }
+  });
+
+  // Em standalone (PWA Add to Home Screen): abre teclado auto, sem autoplay.
+  if (window.matchMedia('(display-mode: standalone)').matches) {
+    setTimeout(() => phone.classList.add('keyboard-open'), 100);
+  }
+
 
   applyAutoplay();
 </script>
