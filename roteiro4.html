@@ -493,8 +493,20 @@
 
   /* Mobile: full screen automático mesmo no Safari (sem precisar Add to Home) */
   @media (max-width: 500px) {
-    body { padding: 0; background: var(--bg-cream); }
+    html, body {
+      width: 100vw;
+      height: 100vh;
+      height: 100dvh;
+      overflow: hidden;
+    }
+    body {
+      padding: 0;
+      background: var(--bg-cream);
+      display: block;
+    }
     .phone {
+      position: fixed;
+      inset: 0;
       width: 100vw;
       height: 100vh;
       height: 100dvh;
