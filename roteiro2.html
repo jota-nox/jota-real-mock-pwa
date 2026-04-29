@@ -473,6 +473,18 @@
   /* Tecla retorno (canto inferior direito do teclado) */
   .kb-return { left: 76%; top: 64%; width: 23%; height: 14%; }
 
+
+  /* Botão back invisível em cima do "< 22" do header.png — navega pro index */
+  .back-target {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 22%;
+    height: 100%;
+    cursor: pointer;
+    pointer-events: auto;
+    -webkit-tap-highlight-color: transparent;
+  }
 </style>
 </head>
 
@@ -494,6 +506,7 @@
 
   <div class="header">
     <img src="header.png" alt="">
+    <a class="back-target" href="index.html" aria-label="Voltar"></a>
   </div>
 
   <div class="input">
