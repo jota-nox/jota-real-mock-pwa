@@ -441,7 +441,7 @@
     }
     .phone {
       width: 100vw;
-      height: 100dvh;
+      height: 100vh;
       border-radius: 0;
       box-shadow: none;
     }
@@ -490,7 +490,6 @@
     html, body {
       width: 100vw;
       height: 100vh;
-      height: 100dvh;
       overflow: hidden;
     }
     body {
@@ -503,7 +502,6 @@
       inset: 0;
       width: 100vw;
       height: 100vh;
-      height: 100dvh;
       border-radius: 0;
       box-shadow: none;
     }
@@ -514,13 +512,6 @@
     .controls { display: none !important; }
   }
 
-  /* Mobile/standalone: estende keyboard pra cobrir home indicator do iPhone */
-  @media (max-width: 500px), (display-mode: standalone) {
-    .keyboard {
-      background: #cbcdd2;
-      padding-bottom: env(safe-area-inset-bottom);
-    }
-  }
 </style>
 </head>
 
