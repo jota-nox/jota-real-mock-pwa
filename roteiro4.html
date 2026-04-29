@@ -75,8 +75,8 @@
      ──────────────────────────────────────────────────────────── */
   .messages {
     position: absolute;
-    top: 90px;
-    bottom: 73px;
+    top: calc(env(safe-area-inset-top) + var(--header-h, 90px));
+    bottom: calc(env(safe-area-inset-bottom) + var(--input-h, 73px));
     left: 0;
     right: 0;
     padding: 11px 15px;
@@ -1059,6 +1059,64 @@
   if (window.matchMedia('(display-mode: standalone)').matches) {
     setTimeout(() => phone.classList.add('keyboard-open'), 100);
   }
+
+
+
+  // ────────────────────────────────────────────────────────────
+  // Auto-detecção de modelo iPhone (a partir do 14) + sync layout
+  // Calcula header_h e input_h proporcionais à largura real do device,
+  // aplica como CSS variables. Adiciona classe iphone-* no body pra
+  // permitir ajustes específicos por modelo se precisar.
+  // ────────────────────────────────────────────────────────────
+  const IPHONE_MODELS = [
+    // [width, height, class, label]
+    [390, 844, 'iphone-14',         'iPhone 14 / 13 / 12'],
+    [393, 852, 'iphone-14-pro',     'iPhone 14 Pro / 15 / 15 Pro / 16'],
+    [402, 874, 'iphone-16-pro',     'iPhone 16 Pro'],
+    [428, 926, 'iphone-14-plus',    'iPhone 14 Plus / 13 Pro Max'],
+    [430, 932, 'iphone-14-pro-max', 'iPhone 14/15 Pro Max / 15/16 Plus'],
+    [440, 956, 'iphone-16-pro-max', 'iPhone 16 Pro Max'],
+  ];
+  function detectIphoneClass() {
+    const w = window.innerWidth, h = window.innerHeight;
+    let best = null, bestDiff = Infinity;
+    for (const [mw, mh, cls, label] of IPHONE_MODELS) {
+      const diff = Math.abs(mw - w) + Math.abs(mh - h);
+      if (diff < bestDiff) { bestDiff = diff; best = cls; }
+    }
+    return bestDiff < 30 ? best : null; // só aplica se bate dentro de 30px
+  }
+  function syncLayout() {
+    const phoneEl = document.getElementById('phone');
+    if (!phoneEl) return;
+    const phoneW = phoneEl.getBoundingClientRect().width;
+    // Header e input dimensions naturais (PNGs)
+    const headerImg = document.querySelector('.header img');
+    const inputImgEl = document.querySelector('.input img');
+    if (headerImg && headerImg.naturalWidth) {
+      const headerH = phoneW * (headerImg.naturalHeight / headerImg.naturalWidth);
+      document.documentElement.style.setProperty('--header-h', headerH + 'px');
+    }
+    if (inputImgEl && inputImgEl.naturalWidth) {
+      const inputH = phoneW * (inputImgEl.naturalHeight / inputImgEl.naturalWidth);
+      document.documentElement.style.setProperty('--input-h', inputH + 'px');
+    }
+    // iPhone class
+    const cls = detectIphoneClass();
+    if (cls) {
+      IPHONE_MODELS.forEach(m => document.body.classList.remove(m[2]));
+      document.body.classList.add(cls);
+    }
+  }
+  window.addEventListener('resize', syncLayout);
+  window.addEventListener('orientationchange', syncLayout);
+  // Run once on load + after images
+  document.addEventListener('DOMContentLoaded', syncLayout);
+  ['.header img', '.input img'].forEach(sel => {
+    const el = document.querySelector(sel);
+    if (el) el.addEventListener('load', syncLayout);
+  });
+  syncLayout();
 
 
   applyAutoplay();
