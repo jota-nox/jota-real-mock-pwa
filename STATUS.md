@@ -1,97 +1,76 @@
 # Status — pra retomar
 
-**Última versão:** v4.3 (publicada em https://jota-real-mock.vercel.app)
-**Data do snapshot:** 2026-04-29
+**Última versão:** v2.2+ (publicada em https://jota-real-mock-pwa.vercel.app)
+**Data do snapshot:** 2026-04-30
 
 ---
 
 ## Onde estamos
 
-Os 5 roteiros estão **funcionais e publicados**. Auto-deploy GitHub → Vercel ativo.
+Versão PWA do protótipo, forkada do `jota-real-mock` original em 2026-04-29.
+Os dois projetos rodam independentes:
 
-## Mudanças nesta sessão (após v3.9)
+- **Original (desktop demos com bezel):** https://jota-real-mock.vercel.app — v4.4
+- **PWA (full screen iPhone):** https://jota-real-mock-pwa.vercel.app — v2.2+
 
-**Áudio recomposto:**
-- Antes: PNG monolítico (`audio-sent-clean.png` etc) com tudo baked.
-- Agora: composição com 2 PNGs (`audio-ref-elementos.png` = avatar+play+dot+waveform; `audio-ref-timestamps.png` = "0:09" + "06:49 ✓✓") empilhados via `.audio-stack` dentro do bubble v3.9 normal. BG verde dos PNGs (#D4FCCD) bate com bubble sent → seamless.
-- Padding atual: `10px 16px 8px 10px`, gap `4px`.
-- Aplicado nos 5 roteiros.
+## O que essa versão tem
 
-**Nota fiscal:**
-- Foto trocada pra `nota-fiscal-v3.png` (cropada pelo Felippo, com timestamp "11:39 ✓✓" baked).
-- `photoBubble` ganhou opção `noOverlay: true` pra desabilitar overlay HTML quando foto já tem timestamp baked (evita duplicação).
-- Padding `10px` simétrico (.bubble.photo).
-- Roteiros 1 + 4.
+**Setup PWA:**
+- Meta tags Apple PWA + `manifest.json` com `scope:"/"` e `display:standalone`
+- Touch icon (smiley do Jota cropado)
+- Header.png limpo (sem status bar simulado, usa o real do iPhone)
+- `.phone` com `position:fixed; inset:0; height:100vh` em mobile/standalone
+- `padding-top: env(safe-area-inset-top)` no header com BG `#EDEDE7`
+- Keyboard cola no bottom (Slice 1.png já tem espaço home indicator)
 
-**Bug fix universal — img.load:**
-- `imageBubble` e `photoBubble` re-aplicam `applyBubbleShape(b)` no `img.addEventListener('load')`. Antes o SVG bg era desenhado antes da img carregar (altura zerada → bg quebrado). Agora atualiza com dimensões finais.
-- Aplicado nos 5 roteiros pro `imageBubble`; nos roteiros 1+4 pro `photoBubble`.
+**Triggers (sem menu visual):**
+- MIC ou RETORNO → próxima tela não tocada (counter único)
+- Q/E/R/T/Y → playTela 1-5 específica (Y só roteiro4)
+- Atalhos físicos no desktop iguais; ENTER = avança
+- Play All só ativo via `?playall=1` ou `?autoplay=all` (do hub)
+- Back button invisível no canto esquerdo do header → `/` (absoluto)
 
-## Mudanças v4.1 → v4.3 (2026-04-29)
+**Layout responsivo automático:**
+- syncLayout() detecta modelo iPhone (a partir do 14) e seta `--header-h`/`--input-h` proporcional
+- 6 modelos cobertos: 390/393/402/428/430/440px wide
+- Classe `iphone-*` no body pra ajustes finos futuros
 
-**Áudio (v4.1, v4.2):** padding final `9px 19px 5px 8px`. Calibrado contra Figma do Felippo (canvas 660 scale → real 0.55x). Wave 100% inner. Timestamps `width: 65%; margin-left: 35%`. Bate com referência CERTO em <3% delta.
+**Assets:**
+- Avatares áudio: roteiros 1+3 → `audio-ref-elementos.png` (mulher); 2+4+5 → `audio-ref-elementos-man1.png` (homem)
+- Notas fiscais: roteiro1 → `nota-fiscal-v4.png` (confeitaria R$ 347); roteiro4 → `nota-fiscal-v3.png` (passagem R$ 175)
+- Charts atualizados em 2026-04-30: chart-categorias, chart-faturamento, chart-projecao
 
-**Foto (v4.1, v4.3):** padding final `8px 14px 8px 3px`. Right=14 compensa tail compress do SVG. Top/bot=8 dá respiro vertical visível (3 era pouco).
+**Index (hub):**
+- Manual de operação destacado no topo (card preto/amarelo)
+- Cards dos 5 roteiros simplificados (Abrir + Roteiro completo)
+- Instruções Add to Home Screen explícitas
 
-## Workflow que funcionou pra calibração
+## Pra testar no iPhone
 
-1. Felippo manda imagem CERTO ou medidas Figma (canvas 660 scale)
-2. Eu monto `test-X.html` com 4-6 variantes lado a lado (rótulos com padding values)
-3. Sobe local server (`python3 -m http.server 8765`)
-4. Felippo abre, tira screenshot, diz "v3 bate"
-5. Aplico nos 5 roteiros + commit + push
+1. Safari → `https://jota-real-mock-pwa.vercel.app`
+2. Compartilhar → Adicionar à Tela de Início
+3. **Sair do Safari**, ir pra Home Screen, tocar no ícone "Jota"
+4. Abre 100% full screen, sem URL bar, sem bottom bar
 
-Bate em 1-2 iterações em vez de 5+ chutes às cegas.
+**Importante:** se atualizar meta tags ou manifest, REMOVER ícone da home + RE-ADD (iOS faz cache do snapshot do momento do Add).
 
-## O que tá ROLANDO bem
-
-- **Hub** (`index.html`) lista os 5 roteiros, autoplay individual + all, script de apresentação ao vivo
-- **5 protótipos** (`roteiroN.html`) — Categorização, Fiado, 3 Perspectivas, Lista Funcional, A Moto
-- **Charts** (`chart-categorias.png`, `chart-faturamento.png`, `chart-projecao.png`) seguindo template Figma
-- **Bolhas SVG dinâmicas** (v3.9) — path gerado em JS baseado nas dimensões da bolha; tail mantém tamanho fixo (8×13px) sem distorção
-- **Áudio composto** com avatar+play+dot+waveform+timestamps via 2 pieces PNG dentro do bubble v3.9
-- **Foto da nota cropada** (v3) com timestamp baked, sem overlay HTML duplicado
-
-## Decisão tomada nesta sessão
-
-**Bubble custom estilo iMessage** (que o Felippo desenhou no Figma com 17 slices) **NÃO foi adotado** nos roteiros. Mantemos o WA-style do v3.9 (tail pequeno triangular, cantos r=9). Asset do Figma fica arquivado como referência caso volte ao tema.
-
-Detalhes técnicos do que foi explorado em `feedback_debug_visual_primeiro.md` e na pasta `bubble/` (17 slices do Figma) + `bubble-clean/` (sem fundo preto). Não commitados — só na working tree.
-
-## Pra retomar numa sessão nova
-
-```bash
-# Abrir o protótipo
-open /Users/felippo/Documents/jota-real-mock/index.html
-
-# Ou direto online
-open https://jota-real-mock.vercel.app
-
-# Status do repo
-cd /Users/felippo/Documents/jota-real-mock && git log --oneline | head -10
-```
-
-Memória chave em `~/.claude/projects/-Users-felippo-Documents/memory/`:
-- `project_jota_wa_canvas.md` — estrutura, assets, truques técnicos
-- `feedback_debug_visual_primeiro.md` — workflow obrigatório pra problemas visuais (render+overlay+delta)
-- `feedback_inferencia_em_prol_resultado.md` — não pingue por trivialidades; resolva sozinho
-
-## Histórico recente (últimos commits)
+## Histórico recente
 
 ```
-794aed5 áudio com pieces compostas + nota v3 cropada
-935f79a docs: STATUS.md pra retomada de sessão
-0afc495 v3.9 — SVG bubble dinâmico (tail tamanho fixo, sem distorção)
-09c1d2d v3.8 — SVG vector bubble em TODAS as variantes (audio/photo/image)
-06f6ed8 v3.7 — bolhas SVG vector com tail integrado
+4b9d7fa fix: typo no chart-categorias
+0bc6014 leve delay entre os 3 inputs da Tela 1 do roteiro4
+10f0c1e roteiro1 usa nota-fiscal-v4 + v3 atualizada (roteiro4)
+f155e81 charts atualizados
+09450d9 v2.2 — phone usa 100vh (não 100dvh) pra cobrir bottom
+1fc6094 v2.1 — keyboard cobre área do home indicator (revertido em v2.2)
+50eb3ef v2.0 — phone com position:fixed inset:0 em mobile
+65f020a v1.9 — corta cream vazio em cima do header.png
+2a9d3aa v1.8 — Web App Manifest + scope (manter standalone em nav interna)
+717be7c v1.7 — full screen automático em qualquer mobile
+ac9df97 v1.6 — botão back no header navega pro index
+60c1fac v1.5 — auto-detecção de modelo iPhone + layout responsivo
+22035f8 v1.2 — esconde menu de controles
+b0984de v1.3 — index limpo + manual de operação
+6375e1c v1.1 — triggers PWA: MIC, RETORNO, Q E R T Y
+5ece6f8 v1.0 PWA — full screen iPhone setup (forkado @ original v4.4)
 ```
-
-## Próximos blocos possíveis (não-priorizados)
-
-1. **Centralizar a foto da nota fiscal** dentro do bubble (pendência visual; aplicar workflow render+overlay+delta)
-2. Empacotar como **Skill Claude Code** (`jota-wa-roteiros`) pra gerar roteiros novos via prompt
-3. DSL YAML pra roteiros (formato compartilhável fora do Claude)
-4. Refinos visuais que ficaram pendentes:
-   - Posicionamento de bolhas no aparecimento
-   - Sombra das bolhas (drop-shadow vs filter)
-5. Substituir charts placeholder por imagens finais
