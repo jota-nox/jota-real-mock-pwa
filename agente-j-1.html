@@ -1,0 +1,1128 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Jota">
+<meta name="theme-color" content="#efeae2">
+<link rel="apple-touch-icon" href="touch-icon.png">
+<link rel="manifest" href="manifest.json">
+<title>Jota — Agente J · Abertura de semana</title>
+
+<!--
+  Canvas base do protótipo Jota no WhatsApp.
+  Layers (bottom to top):
+    .chat        — doodle wallpaper (z 0)
+    .input       — input bar; slides up partially when keyboard opens (z 8)
+    .keyboard    — iOS keyboard; slides up from bottom on toggle (z 9)
+    .header      — status bar + chat header (z 10)
+    .mic-target  — invisible hit area on input mic icon (z 11)
+    .rec-overlay — recording UI (rec bar + lock pill + live timer); shown on press (z 12)
+  Controls: 'k' toggles keyboard, 'h' hides dev controls.
+  Recording: hold mouse on input mic icon (only when keyboard open). Release to reset.
+-->
+
+<style>
+  :root {
+    --phone-w: 393px;
+    --phone-h: 852px;
+    --phone-radius: 55px;
+    --bg-cream: #efeae2;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    height: 100%;
+    background: #1a1a1a;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+    overflow: hidden;
+  }
+
+  body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+
+  .phone {
+    width: var(--phone-w);
+    height: var(--phone-h);
+    border-radius: var(--phone-radius);
+    background: var(--bg-cream);
+    position: relative;
+    overflow: hidden;
+    box-shadow:
+      0 0 0 2px #2a2a2a,
+      0 0 0 8px #0a0a0a,
+      0 30px 80px rgba(0, 0, 0, 0.6),
+      0 10px 30px rgba(0, 0, 0, 0.4);
+  }
+
+  .chat {
+    position: absolute;
+    inset: 0;
+    background-image: url('bgDoodle.png');
+    background-repeat: repeat;
+    background-size: 660px auto; /* 50% of natural 1320×1911 */
+    background-color: var(--bg-cream);
+  }
+
+  /* ────────────────────────────────────────────────────────────
+     Messages container & bubbles — calibrated against WA iOS refs
+     Padding lateral 15px, gap 11px. Top-anchored (mensagens iniciais ficam
+     no topo); quando o feed enche, auto-scroll mantém a última visível.
+     ──────────────────────────────────────────────────────────── */
+  .messages {
+    position: absolute;
+    top: calc(env(safe-area-inset-top) + var(--header-h, 90px));
+    bottom: calc(env(safe-area-inset-bottom) + var(--input-h, 73px));
+    left: 0;
+    right: 0;
+    padding: 11px 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 11px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scroll-behavior: smooth;
+    transition: bottom 0.25s ease;
+  }
+  .messages::-webkit-scrollbar { display: none; }
+
+  .phone.keyboard-open .messages {
+    bottom: calc(var(--keyboard-h, 309px) + 44px);
+  }
+
+  /* Date pill ("Hoje", etc.) */
+  .date-pill {
+    align-self: center;
+    background: rgba(255, 255, 255, 0.92);
+    color: #54656f;
+    font-size: 12px;
+    font-weight: 500;
+    padding: 4px 12px;
+    border-radius: 8px;
+    box-shadow: 0 1px 0.5px rgba(0, 0, 0, 0.06);
+  }
+
+  /* Bubble base */
+  .bubble {
+    max-width: 78%;
+    word-wrap: break-word;
+    animation: bubble-in 0.18s ease-out;
+    position: relative;
+    filter: drop-shadow(0 1px 0.5px rgba(0, 0, 0, 0.13));
+  }
+  @keyframes bubble-in {
+    from { opacity: 0; transform: translateY(4px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .bubble.sent     { align-self: flex-end; }
+  .bubble.received { align-self: flex-start; }
+
+  /* Text bubble */
+  .bubble.text {
+    padding: 10px 12px 10px 12px;
+    font-size: 14.5px;
+    line-height: 1.32;
+    color: #0c0c0c;
+    -webkit-font-smoothing: antialiased;
+    background-repeat: no-repeat;
+    background-size: 100% 100%;
+  }
+  .bubble.sent.text     { padding-right: 16px; }
+  .bubble.received.text { padding-left: 16px; }
+
+  /* Tail — cropped from real WA iOS screenshots (wa-refs/IMG_3649.PNG)
+     with cream BG color-keyed to alpha. Aplicado em TODA bolha (text, photo,
+     image, audio). Posicionado absoluto fora do canto bottom da bolha. */
+  /* Tail integrado no SVG background da bolha (ver .bubble.text.sent/.received). */
+
+  /* Inline rich text */
+  .bubble.text strong { font-weight: 600; color: inherit; }
+  .bubble.text em     { font-style: italic; color: inherit; }
+  .bubble.text s      { text-decoration: line-through; color: inherit; }
+  .bubble.text code   {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 0.94em;
+    background: rgba(0, 0, 0, 0.05);
+    padding: 0 3px;
+    border-radius: 3px;
+  }
+  .bubble.text a.wa-link {
+    color: #1b8755;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    cursor: pointer;
+  }
+
+  /* Meta (timestamp + check) — inline trailing the last paragraph */
+  .bubble .meta {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 11px;
+    color: #667781;
+    margin-left: 6px;
+    transform: translateY(3px);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .bubble .meta .check { width: 14px; height: 9px; display: inline-block; }
+
+  /* QUOTE inline (reply preview inside bubble) */
+  .quote {
+    display: flex;
+    align-items: stretch;
+    gap: 8px;
+    background: #f4f2f3;
+    border-left: 4px solid #93612a; /* "Você" hash color (mustard) */
+    border-radius: 4px;
+    padding: 6px 10px 7px;
+    margin: -2px 0 4px;
+    min-height: 50px;
+    overflow: hidden;
+  }
+  .quote.has-thumb { padding-right: 0; }
+  .quote-content {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 2px;
+  }
+  .quote-author {
+    color: #93612a;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.2;
+    letter-spacing: -0.1px;
+  }
+  .quote-label {
+    color: #3c3c43;
+    font-size: 13px;
+    font-weight: 400;
+    line-height: 1.25;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .quote-icon {
+    width: 13px;
+    height: 13px;
+    flex-shrink: 0;
+    fill: currentColor;
+    opacity: 0.85;
+  }
+  .quote-thumb {
+    width: 47px;
+    height: 50px;
+    object-fit: cover;
+    border-radius: 4px;
+    flex-shrink: 0;
+    align-self: stretch;
+  }
+
+  /* Image-asset bubbles (audio, typing) — asset already includes its bg */
+  /* Audio: 2 PNGs empilhados. Padding calibrado contra Figma do Felippo
+     (canvas 660: padding 16/35/9/15 → real ~0.55× = 9/19/5/8). Wave 100% inner.
+     Timestamps width 65% align-left 35% pra "06:49" terminar perto do fim do wave. */
+  .bubble.audio { width: 78%; max-width: 78%; padding: 9px 19px 5px 8px; /* SVG bg via JS */ }
+  .bubble.audio .audio-stack { display: flex; flex-direction: column; gap: 0; }
+  .bubble.audio .audio-stack img { display: block; }
+  .bubble.audio .audio-stack .audio-elements { width: 100%; }
+  .bubble.audio .audio-stack .audio-times { width: 65%; margin-left: 35%; }
+
+  .bubble.typing { width: 13%; max-width: 13%; }
+  .bubble.typing img { width: 100%; display: block; }
+
+  /* Photo/image bubble — image with bubble background border around it.
+     Padding 3px = WA real (medido em wa-refs/IMG_3660.PNG: 1.1% horizontal, 0.9% vertical). */
+  .bubble.photo {
+    padding: 8px 14px 8px 3px;
+    width: 66%;
+    max-width: 66%;
+    position: relative;
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
+  }
+  .bubble.photo.sent     { /* SVG bg applied via JS */ }
+  .bubble.photo.received { /* SVG bg applied via JS */ }
+  .bubble.photo img {
+    width: 100%;
+    display: block;
+    border-radius: 6px;
+    height: auto;              /* aspect natural da foto cropada */
+    background: #f4f2f3;
+  }
+  .bubble.photo .meta-overlay {
+    position: absolute;
+    bottom: 10px;
+    right: 9px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 400;
+    text-shadow: 0 0 3px rgba(0, 0, 0, 0.4);
+    font-variant-numeric: tabular-nums;
+  }
+  .bubble.photo .meta-overlay .check {
+    width: 14px;
+    height: 9px;
+    fill: rgba(255, 255, 255, 0.9);
+  }
+  /* Image bubble for chart/document — wider, no overlay, light bg for received */
+  .bubble.image {
+    padding: 5px 5px 6px 5px;
+    width: 75%;
+    max-width: 75%;
+    position: relative;
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
+  }
+  .bubble.image.sent { padding-right: 16px; /* SVG bg applied via JS */ }
+  .bubble.image.received { padding-left: 16px; /* SVG bg applied via JS */ }
+  .bubble.image img {
+    width: 100%;
+    display: block;
+    border-radius: 6px;
+    aspect-ratio: 1 / 1;        /* reserva espaço enquanto carrega — chart é quadrado */
+    object-fit: cover;
+    background: #f4f2f3;        /* placeholder enquanto img carrega */
+  }
+  .bubble.image .meta {
+    position: absolute;
+    bottom: 8px;
+    right: 12px;
+    background: transparent;
+    padding: 0;
+    transform: none;
+    margin: 0;
+    color: #b8b3a8;
+  }
+
+  .header {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 10;
+    pointer-events: none;
+    user-select: none;
+  }
+
+  .input {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    z-index: 8;
+    pointer-events: none;
+    user-select: none;
+    transition: transform 0.25s ease;
+  }
+
+  .keyboard {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    z-index: 9;
+    transform: translateY(100%);
+    transition: transform 0.25s ease;
+    pointer-events: none;
+    user-select: none;
+  }
+
+  .header img,
+  .input img,
+  .keyboard img {
+    width: 100%;
+    display: block;
+  }
+
+  /* Keyboard open: slide keyboard in, slide input up so its safe-area
+     bottom hides behind keyboard (leaves cream above pill = cream below pill). */
+  .phone.keyboard-open .keyboard {
+    transform: translateY(0);
+  }
+  .phone.keyboard-open .input {
+    transform: translateY(calc(var(--input-extra-safe, 29px) - var(--keyboard-h, 309px)));
+  }
+
+  /* Mic hit area — sits over the right mic icon in input-margin.png.
+     pointer-events:auto overrides the input's none. Only active when keyboard open. */
+  .mic-target {
+    position: absolute;
+    top: 4%;
+    right: 0;
+    width: 16%;
+    height: 38%;
+    z-index: 11;
+    pointer-events: none;
+    cursor: pointer;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  .phone.keyboard-open .mic-target {
+    pointer-events: auto;
+  }
+
+  /* Recording overlay — single transparent PNG with lock pill + REC bar.
+     Anchored above keyboard so REC bar sits on the keyboard top. */
+  .rec-overlay {
+    position: absolute;
+    bottom: var(--keyboard-h, 309px);
+    left: 0;
+    width: 100%;
+    z-index: 12;
+    pointer-events: none;
+    display: none;
+  }
+  .rec-overlay img {
+    width: 100%;
+    display: block;
+  }
+  .phone.rec-active .rec-overlay {
+    display: block;
+  }
+
+  /* Live timer — calibrated against REC-ui-target.png via headless render diff.
+     Helvetica Neue 18px weight 300 matched target width within 1px raw. */
+  .rec-timer {
+    position: absolute;
+    left: 10.6%;
+    bottom: 0;
+    height: 34%;
+    display: flex;
+    align-items: center;
+    color: #1a1a1a;
+    font-family: "Helvetica Neue", -apple-system, sans-serif;
+    font-size: 18px;
+    font-weight: 300;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Dev controls */
+  .controls {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    display: flex;
+    gap: 8px;
+    z-index: 100;
+  }
+  .controls button {
+    background: #2a2a2a;
+    color: #efeae2;
+    border: 1px solid #444;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 12px;
+    cursor: pointer;
+  }
+  .controls button:hover {
+    background: #3a3a3a;
+  }
+  .controls {
+    display: none !important;
+  }
+
+  /* PWA standalone — full screen no iPhone real */
+  @media (display-mode: standalone) {
+    body {
+      padding: 0;
+      background: var(--bg-cream);
+    }
+    .phone {
+      width: 100vw;
+      height: 100vh;
+      border-radius: 0;
+      box-shadow: none;
+    }
+    /* Header limpo (sem status bar embutido) — empurra abaixo da safe area top */
+    .header {
+      padding-top: env(safe-area-inset-top);
+      background: #EDEDE7;
+    }
+    /* Esconde dev controls no protótipo "ao vivo" */
+    .controls { display: none !important; }
+  }
+
+  /* Triggers invisíveis em cima das teclas Q E R T Y e RETORNO */
+  .kb-target {
+    position: absolute;
+    cursor: pointer;
+    pointer-events: none;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+  }
+  .phone.keyboard-open .kb-target { pointer-events: auto; }
+  /* Linha QWERTY do teclado iOS (y 16-28% do PNG, cada tecla ~10% wide) */
+  .kb-q { left: 0%;  top: 16%; width: 10%; height: 13%; }
+  .kb-e { left: 20%; top: 16%; width: 10%; height: 13%; }
+  .kb-r { left: 30%; top: 16%; width: 10%; height: 13%; }
+  .kb-t { left: 40%; top: 16%; width: 10%; height: 13%; }
+  .kb-y { left: 50%; top: 16%; width: 10%; height: 13%; }
+  /* Tecla retorno (canto inferior direito do teclado) */
+  .kb-return { left: 76%; top: 64%; width: 23%; height: 14%; }
+
+
+  /* Botão back invisível em cima do "< 22" do header.png — navega pro index */
+  .back-target {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 22%;
+    height: 100%;
+    cursor: pointer;
+    pointer-events: auto;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Mobile: full screen automático mesmo no Safari (sem precisar Add to Home) */
+  @media (max-width: 500px) {
+    html, body {
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+    }
+    body {
+      padding: 0;
+      background: var(--bg-cream);
+      display: block;
+    }
+    .phone {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      border-radius: 0;
+      box-shadow: none;
+    }
+    .header {
+      padding-top: env(safe-area-inset-top);
+      background: #EDEDE7;
+    }
+    .controls { display: none !important; }
+  }
+
+</style>
+</head>
+
+<body>
+
+<div class="controls" id="controls">
+  <button onclick="ato(1)">Ato 1</button>
+  <button onclick="ato(2)">Ato 2</button>
+  <button onclick="ato(3)">Ato 3</button>
+  <button onclick="ato(4)">Ato 4</button>
+  <button onclick="playAll()">Play All</button>
+  <button onclick="toggleControls()">Esconder</button>
+</div>
+
+<div class="phone" id="phone">
+  <div class="chat">
+    <div class="messages" id="messages"></div>
+  </div>
+
+  <div class="header">
+    <img src="header.png" alt="">
+    <a class="back-target" href="/" aria-label="Voltar"></a>
+  </div>
+
+  <div class="input">
+    <img src="input-margin.png" alt="" id="inputImg">
+    <div class="mic-target" id="micTarget" aria-label="Pressionar para gravar"></div>
+  </div>
+
+  <div class="keyboard">
+    <img src="Slice 1.png" alt="" id="keyboardImg">
+    <div class="kb-target kb-q" data-tela="1"></div>
+    <div class="kb-target kb-e" data-tela="2"></div>
+    <div class="kb-target kb-r" data-tela="3"></div>
+    <div class="kb-target kb-t" data-tela="4"></div>
+    <div class="kb-target kb-return" data-action="next"></div>
+  </div>
+
+  <div class="rec-overlay" id="recOverlay">
+    <img src="REC-ui.png" alt="">
+    <div class="rec-timer" id="recTimer">0:00</div>
+  </div>
+</div>
+
+<script>
+  const phone = document.getElementById('phone');
+  const controls = document.getElementById('controls');
+  const keyboardImg = document.getElementById('keyboardImg');
+  const inputImg = document.getElementById('inputImg');
+
+  // Reference image: input.png has equal padding above/below pill.
+  // input-margin.png adds extra cream below pill (iOS home-indicator safe area).
+  // The difference between them = how much input must slide UP behind the
+  // keyboard so the visible cream below pill matches the cream above.
+  const inputRef = new Image();
+  let kbLoaded = false, marginLoaded = false, refLoaded = false;
+
+  function recompute() {
+    const phoneW = phone.getBoundingClientRect().width;
+
+    if (kbLoaded) {
+      const kbH = phoneW * (keyboardImg.naturalHeight / keyboardImg.naturalWidth);
+      document.documentElement.style.setProperty('--keyboard-h', kbH + 'px');
+    }
+
+    if (marginLoaded && refLoaded) {
+      const marginH = phoneW * (inputImg.naturalHeight / inputImg.naturalWidth);
+      const refH = phoneW * (inputRef.naturalHeight / inputRef.naturalWidth);
+      document.documentElement.style.setProperty('--input-extra-safe', (marginH - refH) + 'px');
+    }
+  }
+
+  keyboardImg.addEventListener('load', () => { kbLoaded = true; recompute(); });
+  inputImg.addEventListener('load', () => { marginLoaded = true; recompute(); });
+  inputRef.onload = () => { refLoaded = true; recompute(); };
+  inputRef.src = 'input.png';
+
+  function toggleKeyboard() {
+    phone.classList.toggle('keyboard-open');
+  }
+
+  function toggleControls() {
+    controls.classList.toggle('hidden');
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'k') toggleKeyboard();
+    if (e.key === 'h') toggleControls();
+  });
+
+  // Recording: press-and-hold on input mic icon.
+  const micTarget = document.getElementById('micTarget');
+  const recTimerEl = document.getElementById('recTimer');
+  let recInterval = null;
+  let recStart = 0;
+
+  function updateTimer() {
+    const elapsed = Math.floor((Date.now() - recStart) / 1000);
+    const m = Math.floor(elapsed / 60);
+    const s = elapsed % 60;
+    recTimerEl.textContent = `${m}:${String(s).padStart(2, '0')}`;
+  }
+
+  function startRec(e) {
+    if (e) e.preventDefault();
+    if (!phone.classList.contains('keyboard-open')) return;
+    phone.classList.add('rec-active');
+    recStart = Date.now();
+    recTimerEl.textContent = '0:00';
+    recInterval = setInterval(updateTimer, 200);
+  }
+
+  let lastRecDurationMs = 0;
+  let micPressed = false;  // true only between mousedown-on-mic and the matching mouseup
+
+  function stopRec() {
+    if (!phone.classList.contains('rec-active')) return;
+    lastRecDurationMs = Date.now() - recStart;
+    phone.classList.remove('rec-active');
+    clearInterval(recInterval);
+    recInterval = null;
+    recTimerEl.textContent = '0:00';
+  }
+
+  function micDown(e) { micPressed = true; startRec(e); }
+  function micUp() {
+    if (!micPressed) return;       // ignore mouseups from clicks elsewhere
+    micPressed = false;
+    stopRec();
+    afterRecRelease();
+    lastRecDurationMs = 0;          // consume — never reuse a stale duration
+  }
+
+  micTarget.addEventListener('mousedown', micDown);
+  micTarget.addEventListener('touchstart', micDown, { passive: false });
+  window.addEventListener('mouseup', micUp);
+  window.addEventListener('touchend', micUp);
+  window.addEventListener('touchcancel', () => { micPressed = false; stopRec(); });
+
+  // Single-Ato trigger via dev panel: ensures keyboard is open then plays the scene.
+  function ato(n) {
+    if (!phone.classList.contains('keyboard-open')) phone.classList.add('keyboard-open');
+    const fn = { 1: playTela1, 2: playTela2, 3: playTela3, 4: playTela4, 5: playTela5 }[n];
+    if (fn) fn();
+  }
+
+  // Plays Agente J — Abertura end-to-end with realistic pauses between bolhas.
+  function playAll() {
+    resetChat();
+    if (!phone.classList.contains('keyboard-open')) phone.classList.add('keyboard-open');
+    setTimeout(() => playTela1(),  300);
+    setTimeout(() => playTela2(),  4500);
+    setTimeout(() => playTela3(),  8000);
+    setTimeout(() => playTela4(), 12500);
+    setTimeout(() => playTela5(), 18500);
+  }
+
+  // URL params:
+  //   ?autoplay=tela1|tela2|tela3|tela4|all  — runs scene(s) without interaction
+  //   ?keyboard=open                          — opens keyboard on load (no autoplay)
+  //   ?hidedev=1                              — hides dev panel for clean screenshots
+  function applyAutoplay() {
+    const params = new URLSearchParams(location.search);
+    const p = params.get('autoplay');
+    if (params.get('keyboard') === 'open' || p) {
+      setTimeout(() => phone.classList.add('keyboard-open'), 100);
+    }
+    const map = { tela1: playTela1, tela2: playTela2, tela3: playTela3, tela4: playTela4 };
+    if (map[p]) setTimeout(map[p], 300);
+    if (p === 'all' || params.get('playall') === '1') setTimeout(playAll, 300);
+    if (params.get('hidedev')) controls.classList.add('hidden');
+  }
+
+  // ────────────────────────────────────────────────────────────
+  // Chat / scenes
+  // ────────────────────────────────────────────────────────────
+
+  const messagesEl = document.getElementById('messages');
+
+  function nowHHMM() {
+    const d = new Date();
+    return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+  }
+
+  // Continuously scrolls to bottom for `dur` ms — used to track CSS transitions
+  // (keyboard open/close) so the last bubble stays glued to the input.
+  function scrollToBottomFor(dur = 320) {
+    const start = performance.now();
+    function tick() {
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+      if (performance.now() - start < dur) requestAnimationFrame(tick);
+    }
+    tick();
+  }
+
+  // Generate dynamic SVG path for bubble shape — fixed-size tail, no distortion.
+  const BUBBLE_RADIUS = 9, TAIL_W = 8, TAIL_H = 13;
+  function bubbleSVG(w, h, isSent) {
+    const r = BUBBLE_RADIUS, t = TAIL_W, th = TAIL_H;
+    const fill = isSent ? '%23D4FCCD' : 'white';
+    const totalW = w + t;
+    let path;
+    if (isSent) {
+      path = 'M' + r + ' 0 H' + (w-r) + ' Q' + w + ' 0 ' + w + ' ' + r + ' V' + (h-th) +
+             ' C' + w + ' ' + (h-3) + ' ' + (w+t-2) + ' ' + (h-1) + ' ' + (w+t) + ' ' + (h-1) +
+             ' Q' + (w+t+1) + ' ' + h + ' ' + (w+t-3) + ' ' + (h-2) +
+             ' C' + (w-1) + ' ' + (h-2) + ' ' + (w-2) + ' ' + (h-3) + ' ' + (w-2) + ' ' + h +
+             ' H' + r + ' Q0 ' + h + ' 0 ' + (h-r) + ' V' + r + ' Q0 0 ' + r + ' 0 Z';
+    } else {
+      path = 'M' + (t+r) + ' 0 H' + (t+w-r) + ' Q' + (t+w) + ' 0 ' + (t+w) + ' ' + r + ' V' + (h-r) +
+             ' Q' + (t+w) + ' ' + h + ' ' + (t+w-r) + ' ' + h + ' H' + (t+r) +
+             ' C' + (t+2) + ' ' + h + ' ' + (t+1) + ' ' + (h-2) + ' ' + (t+2) + ' ' + (h-3) +
+             ' Q-1 ' + h + ' 0 ' + (h-1) +
+             ' C0 ' + (h-1) + ' ' + (t-2) + ' ' + (h-3) + ' ' + t + ' ' + (h-th) +
+             ' V' + r + ' Q' + t + ' 0 ' + (t+r) + ' 0 Z';
+    }
+    const svg = "<svg xmlns='http://www.w3.org/2000/svg' width='" + totalW + "' height='" + h +
+                "' viewBox='0 0 " + totalW + " " + h + "'><path d='" + path + "' fill='" + fill + "'/></svg>";
+    return 'url("data:image/svg+xml;utf8,' + svg + '")';
+  }
+
+  function applyBubbleShape(bubble) {
+    if (bubble.classList.contains('typing')) return; // no tail on typing indicator
+    requestAnimationFrame(() => {
+      const r = bubble.getBoundingClientRect();
+      const w = Math.round(r.width);
+      const h = Math.round(r.height);
+      if (w === 0 || h === 0) return;
+      const isSent = bubble.classList.contains('sent');
+      bubble.style.backgroundImage = bubbleSVG(w, h, isSent);
+      bubble.style.backgroundSize = '100% 100%';
+      bubble.style.backgroundRepeat = 'no-repeat';
+    });
+  }
+
+  function appendBubble(html, classes) {
+    const div = document.createElement('div');
+    div.className = `bubble ${classes}`;
+    div.innerHTML = html;
+    messagesEl.appendChild(div);
+    requestAnimationFrame(() => {
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+      applyBubbleShape(div);
+    });
+    return div;
+  }
+
+  // Observe phone class changes (keyboard open/close) → keep last bubble visible.
+  new MutationObserver(() => scrollToBottomFor(320))
+    .observe(phone, { attributes: true, attributeFilter: ['class'] });
+
+  // SVG check icons (double-tick: gray=delivered, blue=read; single=sent)
+  const CHECK_DOUBLE_GRAY = `<svg class="check" viewBox="0 0 16 11" fill="none"><path d="M11.07 0.65L4.37 7.4 1.18 4.21l-.92.91 4.11 4.13 7.62-7.6z" fill="#8696a0"/><path d="M15.07 0.65L8.37 7.4l-.7-.7 6.5-6.55z" fill="#8696a0"/></svg>`;
+  const CHECK_DOUBLE_BLUE = `<svg class="check" viewBox="0 0 16 11" fill="none"><path d="M11.07 0.65L4.37 7.4 1.18 4.21l-.92.91 4.11 4.13 7.62-7.6z" fill="#53bdeb"/><path d="M15.07 0.65L8.37 7.4l-.7-.7 6.5-6.55z" fill="#53bdeb"/></svg>`;
+  const CHECK_SINGLE_GRAY = `<svg class="check" viewBox="0 0 16 11" fill="none"><path d="M12.07 0.65L5.37 7.4 2.18 4.21l-.92.91 4.11 4.13 7.62-7.6z" fill="#8696a0"/></svg>`;
+
+  // Quote icons (SF Symbol-style)
+  const ICON_MIC    = `<svg class="quote-icon" viewBox="0 0 16 16"><path d="M8 1a2.5 2.5 0 0 0-2.5 2.5v5a2.5 2.5 0 0 0 5 0v-5A2.5 2.5 0 0 0 8 1zM4.5 7v1.5a3.5 3.5 0 0 0 7 0V7h1v1.5a4.5 4.5 0 0 1-4 4.475V14.5h2.5v1h-6v-1H7.5v-1.525a4.5 4.5 0 0 1-4-4.475V7h1z"/></svg>`;
+  const ICON_CAMERA = `<svg class="quote-icon" viewBox="0 0 16 16"><path d="M5 3l-1 1.5H2A1.5 1.5 0 0 0 0.5 6v6.5A1.5 1.5 0 0 0 2 14h12a1.5 1.5 0 0 0 1.5-1.5V6A1.5 1.5 0 0 0 14 4.5h-2L11 3H5zm3 3.5a3 3 0 1 1 0 6 3 3 0 0 1 0-6z"/></svg>`;
+
+  /**
+   * Convert WhatsApp-style markdown to HTML, mirroring iOS rendering.
+   * Handles: *bold*, _italic_, ~strike~, `mono`, auto-link URLs/long numbers.
+   */
+  function formatWAText(raw) {
+    const esc = (s) => s.replace(/[&<>]/g, (c) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[c]));
+    const slots = [];
+    let s = esc(raw).replace(/`([^`\n]+)`/g, (_, m) => {
+      slots.push(`<code>${m}</code>`);
+      return ` ${slots.length - 1} `;
+    });
+    s = s.replace(/\b(https?:\/\/[^\s<]+|www\.[^\s<]+)/g,
+      (u) => `<a class="wa-link">${u}</a>`);
+    s = s.replace(/(?<![\d>])(\d[\d.\-\s]{10,})(?!\d)/g, (m) => {
+      const digits = m.replace(/\D/g, '');
+      return digits.length >= 11 ? `<a class="wa-link">${m}</a>` : m;
+    });
+    s = s.replace(/(?<![*\w])\*(?!\s)([^*\n]+?)(?<!\s)\*(?![*\w])/g, '<strong>$1</strong>');
+    s = s.replace(/(?<![_\w])_(?!\s)([^_\n]+?)(?<!\s)_(?![_\w])/g, '<em>$1</em>');
+    s = s.replace(/(?<![~\w])~(?!\s)([^~\n]+?)(?<!\s)~(?![~\w])/g, '<s>$1</s>');
+    s = s.replace(/ (\d+) /g, (_, i) => slots[+i]);
+    return s.replace(/\n/g, '<br>');
+  }
+
+  function metaHtml(opts = {}) {
+    let check = '';
+    if (opts.check === 'sent')      check = CHECK_SINGLE_GRAY;
+    else if (opts.check === 'delivered') check = CHECK_DOUBLE_GRAY;
+    else if (opts.check === 'read') check = CHECK_DOUBLE_BLUE;
+    return `<span class="meta">${nowHHMM()}${check}</span>`;
+  }
+
+  function audioBubble() {
+    const b = appendBubble(
+      `<div class="audio-stack">` +
+        `<img class="audio-elements" src="audio-ref-elementos.png" alt="">` +
+        `<img class="audio-times" src="audio-ref-timestamps.png" alt="">` +
+      `</div>`,
+      'sent audio'
+    );
+    // Re-aplica shape após imagens carregarem (senão SVG bg fica zerado).
+    const imgs = b.querySelectorAll('img');
+    let loaded = 0;
+    imgs.forEach(img => img.addEventListener('load', () => {
+      loaded++;
+      if (loaded === imgs.length) {
+        applyBubbleShape(b);
+        scrollToBottomFor(80);
+      }
+    }));
+    return b;
+  }
+  function typingBubble() {
+    const b = appendBubble(`<img src="typing.png" alt="">`, 'received typing');
+    return b;
+  }
+  function textBubble(text, kind = 'received', opts = {}) {
+    const formatted = formatWAText(text);
+    const quote = opts.quote ? renderQuote(opts.quote) : '';
+    const b = appendBubble(`${quote}${formatted}${metaHtml(opts)}`, `${kind} text`);
+    return b;
+  }
+  function photoBubble(src, opts = {}) {
+    const check = opts.check === 'delivered' ? CHECK_DOUBLE_GRAY :
+                  opts.check === 'read' ? CHECK_DOUBLE_BLUE :
+                  opts.check === 'sent' ? CHECK_SINGLE_GRAY : '';
+    // opts.noOverlay = true quando a foto JÁ tem timestamp baked
+    const overlay = opts.noOverlay ? '' :
+                    `<span class="meta-overlay">${nowHHMM()}${check}</span>`;
+    const b = appendBubble(
+      `<img src="${src}" alt="">${overlay}`,
+      'sent photo'
+    );
+    // Re-aplica shape após img carregar (senão SVG bg fica zerado).
+    const img = b.querySelector('img');
+    img.addEventListener('load', () => {
+      applyBubbleShape(b);
+      scrollToBottomFor(80);
+    });
+    return b;
+  }
+  function imageBubble(src, kind = 'received', opts = {}) {
+    // Charts já têm footer (www.jota.ai); não adiciona timestamp meta na bolha image.
+    const b = appendBubble(
+      `<img src="${src}" alt="">`,
+      `${kind} image`
+    );
+    // Re-aplica bubble shape APÓS img carregar (senão SVG bg fica zerado e
+    // a imagem aparece sem o frame da bolha). Re-scroll também.
+    const img = b.querySelector('img');
+    img.addEventListener('load', () => {
+      applyBubbleShape(b);
+      scrollToBottomFor(80);
+    });
+    return b;
+  }
+  function datePill(label = 'Hoje') {
+    const div = document.createElement('div');
+    div.className = 'date-pill';
+    div.textContent = label;
+    messagesEl.appendChild(div);
+    requestAnimationFrame(() => { messagesEl.scrollTop = messagesEl.scrollHeight; });
+    return div;
+  }
+
+  function renderQuote(q) {
+    // q = { author, type: 'audio'|'photo'|'text', label, thumb? }
+    const icon = q.type === 'audio' ? ICON_MIC : q.type === 'photo' ? ICON_CAMERA : '';
+    const thumbHtml = q.thumb ? `<img class="quote-thumb" src="${q.thumb}" alt="">` : '';
+    const cls = q.thumb ? 'quote has-thumb' : 'quote';
+    return `
+      <div class="${cls}">
+        <div class="quote-content">
+          <div class="quote-author">${q.author}</div>
+          <div class="quote-label">${icon}${q.label}</div>
+        </div>
+        ${thumbHtml}
+      </div>`;
+  }
+
+  // Scene state — tracks which scenes have already played to avoid retrigger.
+  const sceneState = {
+    tela1Played: false,
+    tela2Played: false,
+    tela3Played: false,
+    tela4Played: false,
+    tela5Played: false,
+  };
+
+  function afterRecRelease() {
+    // MIC release dispara próxima cena não tocada (qualquer tipo).
+    if (lastRecDurationMs < 500) return;
+    advanceNext();
+  }
+
+  function resetChat() {
+    messagesEl.innerHTML = '';
+    Object.keys(sceneState).forEach(k => sceneState[k] = false);
+  }
+
+  // ────────────────────────────────────────────────────────────
+  // AGENTE J — Abertura de semana (Claudia / VibeFit)
+  // Jota proativo, segunda 8h. Todas as bolhas 'received'.
+  // ────────────────────────────────────────────────────────────
+
+  function ensureDatePill() {
+    if (!messagesEl.querySelector('.date-pill')) datePill('Hoje');
+  }
+
+  // Tela 1: bolha mestrona — saudação, saldo, faturamento, alerta
+  function playTela1() {
+    if (sceneState.tela1Played) return;
+    sceneState.tela1Played = true;
+    ensureDatePill();
+
+    setTimeout(() => {
+      textBubble(
+        'Bom dia Claudia!\n📅 Essa é a sua semana 11–17/mai.\n\n🏦 *Saldo agora* - VibeFit\nR$ 14.387,50 - Jota\nR$ 8.450,00 - Itaú\n*Total: R$ 22.837,50*\n\nRendimento Jota\n*R$ 142,30*\n\n📈 *Faturamento Projetado*\nR$ 28.700,00\n💸 *Saídas Previstas*\nR$ 40.700,00\n⚠️ Alerta: Seu saldo pode ficar negativo amanhã',
+        'received'
+      );
+    }, 250);
+  }
+
+  // Tela 2: chart projeção da semana
+  function playTela2() {
+    if (sceneState.tela2Played) return;
+    sceneState.tela2Played = true;
+    ensureDatePill();
+
+    setTimeout(() => {
+      const typing = typingBubble();
+      setTimeout(() => {
+        typing.remove();
+        imageBubble('chart-projecao.png', 'received');
+      }, 1200);
+    }, 250);
+  }
+
+  // Tela 3: maiores despesas da semana passada (categorias)
+  function playTela3() {
+    if (sceneState.tela3Played) return;
+    sceneState.tela3Played = true;
+    ensureDatePill();
+
+    setTimeout(() => {
+      const typing = typingBubble();
+      setTimeout(() => {
+        typing.remove();
+        textBubble(
+          '*Maiores despesas da semana passada*\n💸 Transferências: R$ 19.160,00\n📄 Contas e Faturas: R$ 14.411,91\n💻 Tecnologia: R$ 9.417,96\n📱 Assinaturas: R$ 6.775,74 (35 transações)\n🍔 Alimentação: R$ 6.743,81 (47 transações)',
+          'received'
+        );
+      }, 1400);
+    }, 250);
+  }
+
+  // Tela 4: padrões + compromissos (2 bolhas em sequência)
+  function playTela4() {
+    if (sceneState.tela4Played) return;
+    sceneState.tela4Played = true;
+    ensureDatePill();
+
+    setTimeout(() => {
+      textBubble(
+        '*Padrões que notei*\nSábado vale 40% da sua receita semanal\nO dia mais fraco é Segunda com 6%\nO ticket médio está em R$ 247,88',
+        'received'
+      );
+      setTimeout(() => {
+        const typing = typingBubble();
+        setTimeout(() => {
+          typing.remove();
+          textBubble(
+            '*Hoje*\nReunião com fornecedor, alinhar nova coleção\n*Terça*\nPagar fornecedor, Tecidos Premium SP · R$ 39.500\n*Quarta*\nChegada da reposição, Loggi · expectativa pela manhã\n*Sexta*\nPagar conta de energia, ENEL · R$ 620\n*Sábado*\n10h - Sessão fotográfica, nova coleção fitness',
+            'received'
+          );
+        }, 1600);
+      }, 1800);
+    }, 250);
+  }
+
+  // Tela 5: provocação final — convite a interagir
+  function playTela5() {
+    if (sceneState.tela5Played) return;
+    sceneState.tela5Played = true;
+    ensureDatePill();
+
+    setTimeout(() => {
+      const typing = typingBubble();
+      setTimeout(() => {
+        typing.remove();
+        textBubble(
+          'Quer agendar esses pagamentos?',
+          'received'
+        );
+      }, 1200);
+    }, 250);
+  }
+
+
+  // ────────────────────────────────────────────────────────────
+  // Triggers PWA — MIC, RETURN e Q E R T Y disparam cenas
+  // MIC ou RETURN avançam pra próxima tela não tocada (counter único).
+  // Q E R T Y disparam tela específica (override).
+  // Play All só ativo via ?playall=1 (vindo do index).
+  // ────────────────────────────────────────────────────────────
+  function advanceNext() {
+    const fns = { 1: playTela1, 2: playTela2, 3: playTela3, 4: playTela4, 5: typeof playTela5 !== 'undefined' ? playTela5 : null };
+    for (let i = 1; i <= 5; i++) {
+      if (sceneState[`tela${i}Played`]) continue;
+      if (fns[i]) { fns[i](); return; }
+    }
+  }
+  document.querySelectorAll('.kb-target').forEach(el => {
+    el.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (!phone.classList.contains('keyboard-open')) return;
+      const tela = el.dataset.tela;
+      if (tela) {
+        const fn = window['playTela' + tela];
+        if (typeof fn === 'function') fn();
+      } else if (el.dataset.action === 'next') {
+        advanceNext();
+      }
+    });
+  });
+  // Atalhos físicos: Q E R T Y disparam telas, ENTER avança
+  document.addEventListener('keydown', (e) => {
+    const map = { q: 1, e: 2, r: 3, t: 4, y: 5 };
+    const tela = map[e.key.toLowerCase()];
+    if (tela) {
+      const fn = window['playTela' + tela];
+      if (typeof fn === 'function') { e.preventDefault(); fn(); }
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      advanceNext();
+    }
+  });
+
+  // Em standalone (PWA Add to Home Screen): abre teclado auto, sem autoplay.
+  if (window.matchMedia('(display-mode: standalone)').matches) {
+    setTimeout(() => phone.classList.add('keyboard-open'), 100);
+  }
+
+
+
+  // ────────────────────────────────────────────────────────────
+  // Auto-detecção de modelo iPhone (a partir do 14) + sync layout
+  // Calcula header_h e input_h proporcionais à largura real do device,
+  // aplica como CSS variables. Adiciona classe iphone-* no body pra
+  // permitir ajustes específicos por modelo se precisar.
+  // ────────────────────────────────────────────────────────────
+  const IPHONE_MODELS = [
+    // [width, height, class, label]
+    [390, 844, 'iphone-14',         'iPhone 14 / 13 / 12'],
+    [393, 852, 'iphone-14-pro',     'iPhone 14 Pro / 15 / 15 Pro / 16'],
+    [402, 874, 'iphone-16-pro',     'iPhone 16 Pro'],
+    [428, 926, 'iphone-14-plus',    'iPhone 14 Plus / 13 Pro Max'],
+    [430, 932, 'iphone-14-pro-max', 'iPhone 14/15 Pro Max / 15/16 Plus'],
+    [440, 956, 'iphone-16-pro-max', 'iPhone 16 Pro Max'],
+  ];
+  function detectIphoneClass() {
+    const w = window.innerWidth, h = window.innerHeight;
+    let best = null, bestDiff = Infinity;
+    for (const [mw, mh, cls, label] of IPHONE_MODELS) {
+      const diff = Math.abs(mw - w) + Math.abs(mh - h);
+      if (diff < bestDiff) { bestDiff = diff; best = cls; }
+    }
+    return bestDiff < 30 ? best : null; // só aplica se bate dentro de 30px
+  }
+  function syncLayout() {
+    const phoneEl = document.getElementById('phone');
+    if (!phoneEl) return;
+    const phoneW = phoneEl.getBoundingClientRect().width;
+    // Header e input dimensions naturais (PNGs)
+    const headerImg = document.querySelector('.header img');
+    const inputImgEl = document.querySelector('.input img');
+    if (headerImg && headerImg.naturalWidth) {
+      const headerH = phoneW * (headerImg.naturalHeight / headerImg.naturalWidth);
+      document.documentElement.style.setProperty('--header-h', headerH + 'px');
+    }
+    if (inputImgEl && inputImgEl.naturalWidth) {
+      const inputH = phoneW * (inputImgEl.naturalHeight / inputImgEl.naturalWidth);
+      document.documentElement.style.setProperty('--input-h', inputH + 'px');
+    }
+    // iPhone class
+    const cls = detectIphoneClass();
+    if (cls) {
+      IPHONE_MODELS.forEach(m => document.body.classList.remove(m[2]));
+      document.body.classList.add(cls);
+    }
+  }
+  window.addEventListener('resize', syncLayout);
+  window.addEventListener('orientationchange', syncLayout);
+  // Run once on load + after images
+  document.addEventListener('DOMContentLoaded', syncLayout);
+  ['.header img', '.input img'].forEach(sel => {
+    const el = document.querySelector(sel);
+    if (el) el.addEventListener('load', syncLayout);
+  });
+  syncLayout();
+
+
+  applyAutoplay();
+</script>
+
+</body>
+</html>
