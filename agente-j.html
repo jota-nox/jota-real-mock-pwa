@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Jota">
+<meta name="theme-color" content="#f2eee9">
+<link rel="apple-touch-icon" href="touch-icon.png">
+<link rel="manifest" href="manifest.json">
+<title>Agente J — Cadências</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    background: #f2eee9;
+    color: #0c0c0c;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.4;
+  }
+  body {
+    padding: 32px 20px 64px;
+    min-height: 100vh;
+  }
+  .container {
+    max-width: 480px;
+    margin: 0 auto;
+  }
+  header {
+    margin-bottom: 24px;
+  }
+  h1 {
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    margin-bottom: 4px;
+  }
+  .sub {
+    color: #54656f;
+    font-size: 14px;
+  }
+  .grid {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    background: #fff;
+    border-radius: 14px;
+    padding: 16px 18px;
+    text-decoration: none;
+    color: inherit;
+    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.04), 0 4px 16px rgba(0, 0, 0, 0.05);
+    transition: transform 0.08s ease, background 0.12s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .card:active { transform: scale(0.985); background: #fafaf7; }
+  .card .info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .card .title {
+    font-weight: 600;
+    font-size: 16px;
+    letter-spacing: -0.2px;
+    line-height: 1.25;
+  }
+  .card .meta {
+    color: #9a9a9a;
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+  }
+  .card .arrow {
+    color: #c7c7c7;
+    font-size: 22px;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+  .hint {
+    margin-top: 22px;
+    color: #9a9a9a;
+    font-size: 12px;
+    text-align: center;
+    line-height: 1.5;
+  }
+  .hint kbd {
+    background: rgba(0, 0, 0, 0.06);
+    border-radius: 4px;
+    padding: 1px 6px;
+    font: 600 11px ui-monospace, "SF Mono", Menlo, monospace;
+    color: #54656f;
+  }
+
+  /* PWA standalone */
+  @media (display-mode: standalone) {
+    body {
+      padding-top: max(32px, env(safe-area-inset-top) + 16px);
+      padding-bottom: max(64px, env(safe-area-inset-bottom) + 24px);
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <h1>Agente J</h1>
+    <p class="sub">Cadências do Jota proativo · Claudia / VibeFit</p>
+  </header>
+
+  <div class="grid">
+    <a class="card" href="agente-j-1.html">
+      <div class="info">
+        <div class="title">Segunda, abrindo a semana</div>
+        <div class="meta">Segunda · 8h</div>
+      </div>
+      <span class="arrow">›</span>
+    </a>
+    <a class="card" href="agente-j-2.html">
+      <div class="info">
+        <div class="title">Manhã, abrindo o dia</div>
+        <div class="meta">Terça – sexta · 8h</div>
+      </div>
+      <span class="arrow">›</span>
+    </a>
+    <a class="card" href="agente-j-3.html">
+      <div class="info">
+        <div class="title">Noite, fechando o dia</div>
+        <div class="meta">Segunda – quinta · 20h</div>
+      </div>
+      <span class="arrow">›</span>
+    </a>
+    <a class="card" href="agente-j-4.html">
+      <div class="info">
+        <div class="title">Sexta, fechando a semana</div>
+        <div class="meta">Sexta · 18h</div>
+      </div>
+      <span class="arrow">›</span>
+    </a>
+    <a class="card" href="agente-j-5.html">
+      <div class="info">
+        <div class="title">Mês fechado</div>
+        <div class="meta">Primeiro dia útil · 8h</div>
+      </div>
+      <span class="arrow">›</span>
+    </a>
+  </div>
+
+  <p class="hint">
+    Dentro de cada um, tap em <kbd>↵</kbd> pra disparar a sequência.
+  </p>
+</div>
+
+</body>
+</html>
