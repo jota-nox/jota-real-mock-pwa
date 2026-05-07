@@ -9,7 +9,7 @@
 <meta name="theme-color" content="#efeae2">
 <link rel="apple-touch-icon" href="touch-icon.png">
 <link rel="manifest" href="manifest.json">
-<title>Jota — Agente J · Abertura de semana</title>
+<title>Jota — Agente J · Noite</title>
 
 <!--
   Canvas base do protótipo Jota no WhatsApp.
@@ -671,15 +671,14 @@
     if (fns[n]) fns[n]();
   }
 
-  // Plays Agente J — Abertura end-to-end with realistic pauses between bolhas.
+  // Plays Agente J — Noite end-to-end with realistic pauses between bolhas.
   function playAll() {
     resetChat();
     if (!phone.classList.contains('keyboard-open')) phone.classList.add('keyboard-open');
     setTimeout(() => playTela1(),  300);
-    setTimeout(() => playTela2(),  4500);
-    setTimeout(() => playTela3(),  8000);
-    setTimeout(() => playTela4(), 12500);
-    setTimeout(() => playTela5(), 18500);
+    setTimeout(() => playTela2(), 3500);
+    setTimeout(() => playTela3(), 8500);
+    setTimeout(() => playTela4(), 13500);
   }
 
   // URL params:
@@ -926,15 +925,15 @@
   }
 
   // ────────────────────────────────────────────────────────────
-  // AGENTE J — Abertura de semana (Claudia / VibeFit)
-  // Jota proativo, segunda 8h. Todas as bolhas 'received'.
+  // AGENTE J — Noite (Claudia / VibeFit · ex: terça 12/mai pós-pgto)
+  // Jota proativo, noite 20h. Bolhas 'received'.
   // ────────────────────────────────────────────────────────────
 
   function ensureDatePill() {
     if (!messagesEl.querySelector('.date-pill')) datePill('Hoje');
   }
 
-  // Tela 1: bolha mestrona — saudação, saldo, faturamento, alerta
+  // Tela 1: saudação + frame
   function playTela1() {
     if (sceneState.tela1Played) return;
     sceneState.tela1Played = true;
@@ -942,13 +941,13 @@
 
     setTimeout(() => {
       textBubble(
-        'Bom dia Claudia!\n📅 Essa é a sua semana 11–17/mai.\n\n🏦 *Saldo agora* - VibeFit\nR$ 14.387,50 - Jota\nR$ 8.450,00 - Itaú\n*Total: R$ 22.837,50*\n\nRendimento Jota\n*R$ 142,30*\n\n📈 *Faturamento Projetado*\nR$ 28.700,00\n💸 *Saídas Previstas*\nR$ 40.700,00\n⚠️ Alerta: Seu saldo pode ficar negativo amanhã',
+        'Boa noite Claudia!\nAqui vai um resumo de hoje:',
         'received'
       );
     }, 250);
   }
 
-  // Tela 2: chart projeção da semana
+  // Tela 2: vendas do dia + saldo agora
   function playTela2() {
     if (sceneState.tela2Played) return;
     sceneState.tela2Played = true;
@@ -958,12 +957,15 @@
       const typing = typingBubble();
       setTimeout(() => {
         typing.remove();
-        imageBubble('chart-projecao.png', 'received');
-      }, 1200);
+        textBubble(
+          '*🛍 Vendas do dia*\nR$ 2.940,00 (12 transações)\n+ 8% vs sua média de terças\n\n*🏦 Saldo agora* - VibeFit\nR$ 5.027,50\nVariação no dia: -R$ 17.810,00',
+          'received'
+        );
+      }, 1400);
     }, 250);
   }
 
-  // Tela 3: maiores despesas da semana passada (categorias)
+  // Tela 3: saídas + entradas confirmadas
   function playTela3() {
     if (sceneState.tela3Played) return;
     sceneState.tela3Played = true;
@@ -974,41 +976,17 @@
       setTimeout(() => {
         typing.remove();
         textBubble(
-          '*Maiores despesas da semana passada*\n💸 Transferências: R$ 19.160,00\n📄 Contas e Faturas: R$ 14.411,91\n💻 Tecnologia: R$ 9.417,96\n📱 Assinaturas: R$ 6.775,74 (35 transações)\n🍔 Alimentação: R$ 6.743,81 (47 transações)',
+          '*💸 Saídas confirmadas hoje*\nR$ 39.500,00 - Tecidos Premium SP\nR$ 280,00 - Frete Loggi\n\n*📈 Entradas confirmadas hoje*\nR$ 11.580,00 - Cartão D+1\nR$ 2.100,00 - PIX cliente atacado',
           'received'
         );
       }, 1400);
     }, 250);
   }
 
-  // Tela 4: padrões + compromissos (2 bolhas em sequência)
+  // Tela 4: amanhã + provocação
   function playTela4() {
     if (sceneState.tela4Played) return;
     sceneState.tela4Played = true;
-    ensureDatePill();
-
-    setTimeout(() => {
-      textBubble(
-        '*Padrões que notei*\nSábado vale 40% da sua receita semanal\nO dia mais fraco é Segunda com 6%\nO ticket médio está em R$ 247,88',
-        'received'
-      );
-      setTimeout(() => {
-        const typing = typingBubble();
-        setTimeout(() => {
-          typing.remove();
-          textBubble(
-            '*Hoje*\nReunião com fornecedor, alinhar nova coleção\n*Terça*\nPagar fornecedor, Tecidos Premium SP · R$ 39.500\n*Quarta*\nChegada da reposição, Loggi · expectativa pela manhã\n*Sexta*\nPagar conta de energia, ENEL · R$ 620\n*Sábado*\n10h - Sessão fotográfica, nova coleção fitness',
-            'received'
-          );
-        }, 1600);
-      }, 1800);
-    }, 250);
-  }
-
-  // Tela 5: provocação final — convite a interagir
-  function playTela5() {
-    if (sceneState.tela5Played) return;
-    sceneState.tela5Played = true;
     ensureDatePill();
 
     setTimeout(() => {
@@ -1016,10 +994,10 @@
       setTimeout(() => {
         typing.remove();
         textBubble(
-          'Quer agendar esses pagamentos?',
+          '*Amanhã*\nChegada da reposição, Loggi · pela manhã\nRecebimento previsto: R$ 7.420,00 do cartão\n\nQuer ver a previsão completa pra amanhã?',
           'received'
         );
-      }, 1200);
+      }, 1400);
     }, 250);
   }
 
