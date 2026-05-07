@@ -914,9 +914,9 @@
   };
 
   function afterRecRelease() {
-    // MIC release dispara próxima cena não tocada (qualquer tipo).
+    // Agente J: MIC release também dispara a sequência completa.
     if (lastRecDurationMs < 500) return;
-    advanceNext();
+    playAll();
   }
 
   function resetChat() {
@@ -1021,45 +1021,23 @@
       if (fns[i]) { fns[i](); return; }
     }
   }
+  // Agente J: tap no Return (kb-return) ou Enter físico → dispara sequência completa.
   document.querySelectorAll('.kb-target').forEach(el => {
     el.addEventListener('click', (e) => {
       e.preventDefault();
       if (!phone.classList.contains('keyboard-open')) return;
-      const tela = el.dataset.tela;
-      if (tela) {
-        const fn = window['playTela' + tela];
-        if (typeof fn === 'function') fn();
-      } else if (el.dataset.action === 'next') {
-        advanceNext();
-      }
+      if (el.dataset.action === 'next') playAll();
     });
   });
-  // Atalhos físicos: Q E R T Y disparam telas, ENTER avança
   document.addEventListener('keydown', (e) => {
-    const map = { q: 1, e: 2, r: 3, t: 4, y: 5 };
-    const tela = map[e.key.toLowerCase()];
-    if (tela) {
-      const fn = window['playTela' + tela];
-      if (typeof fn === 'function') { e.preventDefault(); fn(); }
-    } else if (e.key === 'Enter') {
+    if (e.key === 'Enter') {
       e.preventDefault();
-      advanceNext();
+      playAll();
     }
   });
 
-  // Em standalone (PWA Add to Home Screen): abre teclado auto, sem autoplay.
-  if (window.matchMedia('(display-mode: standalone)').matches) {
-    setTimeout(() => phone.classList.add('keyboard-open'), 100);
-  }
-
-  // Agente J: tap em qualquer lugar do chat avança próxima cena.
-  // Necessário porque kb-target só funciona com keyboard aberto, e em
-  // contexto proativo (Jota mandando) o cliente não está digitando.
-  document.querySelector('.chat').addEventListener('click', (e) => {
-    // Evita disparar se clicar dentro de uma bolha já renderizada
-    if (e.target.closest('.bubble') || e.target.closest('.date-pill')) return;
-    advanceNext();
-  });
+  // Agente J: teclado sobe sempre no load (waiting state pro tap no Return).
+  setTimeout(() => phone.classList.add('keyboard-open'), 100);
 
 
 
