@@ -1062,6 +1062,15 @@
     setTimeout(() => phone.classList.add('keyboard-open'), 100);
   }
 
+  // Agente J: tap em qualquer lugar do chat avança próxima cena.
+  // Necessário porque kb-target só funciona com keyboard aberto, e em
+  // contexto proativo (Jota mandando) o cliente não está digitando.
+  document.querySelector('.chat').addEventListener('click', (e) => {
+    // Evita disparar se clicar dentro de uma bolha já renderizada
+    if (e.target.closest('.bubble') || e.target.closest('.date-pill')) return;
+    advanceNext();
+  });
+
 
 
   // ────────────────────────────────────────────────────────────
